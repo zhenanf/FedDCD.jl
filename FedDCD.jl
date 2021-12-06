@@ -4,6 +4,7 @@ using LinearAlgebra
 using Printf
 using SparseArrays
 using Random
+using StatsBase
 using Distributed
 
 export Client
@@ -13,10 +14,11 @@ export split_data
 export read_libsvm
 
 
+include("src/utils.jl")
 include("src/client.jl")
 include("src/server.jl")
 include("src/oracle.jl")
-include("src/utils.jl")
+include("src/training.jl")
 
 
 end # module
