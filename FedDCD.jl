@@ -15,10 +15,10 @@ export read_libsvm
 
 
 include("src/utils.jl")
-include("src/client.jl")
-include("src/server.jl")
+include("src/Client/client.jl")
+# include("src/Server/server.jl")
 include("src/oracle.jl")
-include("src/training.jl")
+# include("src/training.jl")
 
 
 end # module

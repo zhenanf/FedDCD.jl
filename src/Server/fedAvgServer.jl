@@ -1,8 +1,4 @@
-########################################################################
-# Server
-########################################################################
-
-mutable struct Server{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Vector{Int64}, T5<:Vector{Client}, T6<:Vector{Matrix{Float64}}} 
+mutable struct FedAvgServer{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Vector{Int64}, T5<:Vector{Client}, T6<:Vector{Matrix{Float64}}} <:Server
     Xtest::T3                        # training data
     Ytest::T4                        # training label
     num_classes::T1                  # number of classes
