@@ -1,13 +1,11 @@
 ########################################################################
 # Client
 ########################################################################\
-module Client
 
 using LinearAlgebra
 using SparseArrays
 using Random
-
-export AbstractClient
+using Printf
 
 # Abstract class for client
 abstract type AbstractClient end
@@ -15,12 +13,12 @@ abstract type AbstractClient end
 # Client upload model to server
 function update! end
 
-# Client download model to server
-function download end
+# # Client download model to server
+# function download end
 
-include("fedAvgCleint.jl")
+include("../LogReg/logReg.jl")
+include("fedAvgClient.jl")
 
-end
 
 
 

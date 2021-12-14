@@ -34,6 +34,28 @@ function split_data(Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int6
     return Xtrain_split, Ytrain_split
 end
 
+# Split data by rows
+function splitDataByRow(Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, num_clients::Int64)
+    num_data, d = size(Xtrain)
+    num_data_client = div(num_data, num_clients)
+    XT = copy(Xtrain')
+    Xtrain_split = Vector{ SparseMatrixCSC{Float64, Int64} }(undef, num_clients)
+    Ytrain_split = Vector{ Vector{Int64} }(undef, num_clients)
+    t = 1
+    for i = 1:num_clients
+        if i < num_clients
+            ids = collect(t: t+num_data_client-1)
+        else
+            ids = collect(t: num_data)
+        end
+        # Xtrain_split[i] = Xtrain[:, ids]
+        Xtrain_split[i] = copy( XT[:,ids]' )
+        Ytrain_split[i] = Ytrain[ids]
+        t += num_data_client
+    end
+    return Xtrain_split, Ytrain_split
+end
+
 # read data from libsvm
 function read_libsvm(filename::String)
     numLine = 0
@@ -84,5 +106,6 @@ function read_libsvm(filename::String)
             end
         end
     end
-    return sparse( J, I, V, m, n ), y
+    return sparse(I, J, V, n, m), y
+    #return sparse( J, I, V, m, n ), y
 end
