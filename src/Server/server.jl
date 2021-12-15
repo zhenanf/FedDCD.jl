@@ -4,4 +4,4 @@
 
 abstract type AbstractServer end
 
-include("fedAvgServer.jl")
+include("fedProxServer.jl")

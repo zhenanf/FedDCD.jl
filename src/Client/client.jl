@@ -17,7 +17,7 @@ function update! end
 # function download end
 
 include("../LogReg/logReg.jl")
-include("fedAvgClient.jl")
+include("fedProxClient.jl")
 
 
 

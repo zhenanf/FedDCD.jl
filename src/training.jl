@@ -23,9 +23,9 @@
 # end
 
 # Implementation of the FedAvg algorithm
-function fedAvg(
-    server::FedAvgServer,
-    clients::Vector{FedAvgClient},
+function fedAvgAndProx(
+    server::FedProxServer,
+    clients::Vector{FedProxClient},
     numRounds::Int64
 )
     # Connect clients with server
@@ -44,9 +44,9 @@ function fedAvg(
         end
         aggregate!(server)
         # Print log
-        objValue = obj(server.Xtest, server.Ytest, server.W, clients[1].lambda)
+        objValue = obj(server.Xtest, server.Ytest, server.W, clients[1].λ)
         acc = accuracy(server.Xtest, server.Ytest, server.W)
-        @printf("Round : %4d, obj: %6.4e, acc: % 3.2e %%\n", t, objValue, acc*100)
+        @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%\n", t, objValue, acc*100)
     end
     endTime = time()
     @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)

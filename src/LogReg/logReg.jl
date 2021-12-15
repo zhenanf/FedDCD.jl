@@ -59,3 +59,4 @@ function getStochasticGrad(
     g = x * s'
     return g
 end
+
