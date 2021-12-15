@@ -16,9 +16,8 @@ function update! end
 # # Client download model to server
 # function download end
 
-include("../LogReg/logReg.jl")
 include("fedProxClient.jl")
-
+include("fedDCDClient.jl")
 
 
 

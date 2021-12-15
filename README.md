@@ -6,6 +6,6 @@ Implementation of the federated dual coordinate descent (FedDCD) method.
 ```
 include("setup.jl")
 include("test/fedAvgtest.jl")
-testFedAvg("")
+testFedAvgAndProx("")
 ```
 

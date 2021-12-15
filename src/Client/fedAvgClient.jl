@@ -9,7 +9,7 @@ mutable struct FedAvgClient{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64,
     W::T4                                   # (model) primal variable
     lr::T2                                  # learning rate
     lambda::T2                              # L2 regularization parameter
-    numLocalEpochs::T1                       # number of local steps
+    numLocalEpochs::T1                      # number of local steps
     function FedAvgClient(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, config::Dict{String,Real})
         numClasses = config["num_classes"]
         lambda = config["lambda"]
