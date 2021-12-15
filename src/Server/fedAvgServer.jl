@@ -1,11 +1,11 @@
-mutable struct FedAvgServer{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Vector{Int64}, T5<:Vector{FedAvgClient}, T6<:Vector{Float64}} <:AbstractServer
+mutable struct FedAvgServer{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Vector{Int64}, T5<:Vector{FedAvgClient}, T6<:Matrix{Float64}} <:AbstractServer
     Xtest::T3                        # testing data
     Ytest::T4                        # testing label
     num_classes::T1                  # number of classes
     num_clients::T1                  # number of clients
     participation_rate::T2           # participation rate
     clients::T5                      # set of clients
-    w::T6                           # global models
+    W::T6                           # global models
     τ::T1                           # number of particiating clients
     selectedIndices::T4             # selected clients                    
     function FedAvgServer(Xtest::SparseMatrixCSC{Float64, Int64}, Ytest::Vector{Int64}, config::Dict{String, Real})
@@ -15,8 +15,8 @@ mutable struct FedAvgServer{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64,
         τ = floor(Int64, num_clients * participation_rate)
         _, d = size(Xtest)
         clients = Vector{FedAvgClient}(undef, num_clients)
-        w = zeros(Float64, d)
-        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Vector{Int64}, Vector{FedAvgClient}, Vector{Float64}}(Xtest, Ytest, num_classes, num_clients, participation_rate, clients, w,τ)
+        W = zeros(Float64, d, num_classes)
+        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Vector{Int64}, Vector{FedAvgClient}, Matrix{Float64}}(Xtest, Ytest, num_classes, num_clients, participation_rate, clients, W, τ)
     end
 end
 
@@ -34,7 +34,7 @@ function sendModel!(
 )
     # Only send model to selected clients
     for idx = 1:server.num_clients
-        server.clients[idx].w = copy(server.w)
+        server.clients[idx].W = copy(server.W)
     end
     return nothing
 end
@@ -44,12 +44,12 @@ function aggregate!(
     server::FedAvgServer
 )
     # Take the average of the selected clients' model
-    fill!(server.w, 0.0)
+    fill!(server.W, 0.0)
     for i = 1:server.τ
         idx = server.selectedIndices[i]
-        server.w += server.clients[idx].w
+        server.W += server.clients[idx].W
     end
-    server.w ./= server.τ
+    server.W ./= server.τ
     return nothing
 end
 

@@ -11,20 +11,21 @@ function testFedAvg(
     # Read data
     filename = "data/rcv1_train.binary"
     X, y = read_libsvm(filename);
-    y = convert( Array{Int64}, 2 .* ( y .- 1.5 ) )
+    y = labelTransform(y)
+    numClasses = length( unique(y) )
     # Split data
     Xsplit, ysplit = splitDataByRow(X, y, numClients)    
 
     # Setup config
     config = Dict(
-        "num_classes" => 2,
+        "num_classes" => numClasses,
         "lambda" => 1e-5,
         "learning_rate" => 1e-2,
         "numLocalEpochs" => 5,
     )
 
     serverConfig = Dict(
-        "num_classes" => 2,
+        "num_classes" => numClasses,
         "num_clients" => numClients,
         "participation_rate" => 0.3
     )

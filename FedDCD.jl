@@ -10,7 +10,7 @@ using Distributed
 export FedAvgClient
 export FedAvgServer
 export softmax, neg_log_loss
-export split_data, splitDataByRow
+export split_data, splitDataByRow, labelTransform
 export read_libsvm
 export fedAvg
 

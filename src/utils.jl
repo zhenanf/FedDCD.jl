@@ -14,6 +14,20 @@ function neg_log_loss(z::Vector{Float64}, y::Int64)
     return -log(z[y])
 end
 
+# Label transformation
+function labelTransform(y::Vector{Int64})
+    d = Dict{Int64, Int64}()
+    uniqueLabels = unique(y)
+    cc = 1
+    for label in uniqueLabels
+        if !haskey(d, label)
+            d[label] = cc
+            cc += 1
+        end
+    end
+    return [ d[x] for x in y ]
+end
+
 # horizontally split data
 function split_data(Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, num_clients::Int64)
     num_data = size(Xtrain, 2)

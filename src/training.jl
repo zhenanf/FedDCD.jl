@@ -44,12 +44,12 @@ function fedAvg(
         end
         aggregate!(server)
         # Print log
-        objValue = obj(server.Xtest, server.Ytest, server.w, clients[1].lambda)
-        acc = accuracy(server.Xtest, server.Ytest, server.w)
+        objValue = obj(server.Xtest, server.Ytest, server.W, clients[1].lambda)
+        acc = accuracy(server.Xtest, server.Ytest, server.W)
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2e %%\n", t, objValue, acc*100)
     end
     endTime = time()
     @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
-    return server.w
+    return server.W
 end
 
