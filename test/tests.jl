@@ -12,7 +12,7 @@ function TestFedAvgAndProx(
     numClients = 10
     numRounds = 100
     # Read data
-    filename = "data/rcv1_train.binary"
+    # filename = "data/rcv1_train.binary"
     # filename = "data/mnist.scale"
     X, y = read_libsvm(filename);
     y = labelTransform(y)

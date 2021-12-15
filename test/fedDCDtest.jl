@@ -11,7 +11,6 @@ function testFedDCD(
     numClients = 10
     numRounds = 100
     # Read data
-    filename = "data/rcv1_train.binary"
     X, y = read_libsvm(filename);
     y = labelTransform(y)
     numClasses = length( unique(y) )
@@ -23,14 +22,14 @@ function testFedDCD(
         "num_classes" => numClasses,
         "lambda" => 1e-5,
         "mu" => 0,
-        "learning_rate" => 1e-1,
+        "learning_rate" => 1e-3,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
         "participation_rate" => 0.3,
-        "learning_rate" => 1e-1,
+        "learning_rate" => 1e-2,
     )
 
     # Construct clients
