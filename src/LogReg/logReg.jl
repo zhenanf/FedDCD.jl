@@ -137,11 +137,12 @@ function ComputeNewtonDirection(
     maxIter = 100
     n, d = size(X)
     _, K = size(W)
-    # Compute gradient
+    # Compute gradient.
     g = getGradient(X, Xt, y, W, λ)
     gnorm = norm(g)
     tol = 1e-4
 
+    # Conjugate gradient iterations.
     D = zeros(Float64, d, K)
     r = g
     p = copy(r)
@@ -182,9 +183,9 @@ function SoftmaxNewtonMethod(
         if gnorm < tol
             break
         end
-        # Compute Newton direction
+        # Compute Newton direction.
         D = ComputeNewtonDirection( X, Xt, y, W, λ )
-        # Use stepsize 1
+        # Use stepsize 1.
         W -=  D
     end
     return W
