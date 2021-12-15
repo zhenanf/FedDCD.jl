@@ -35,7 +35,7 @@ function testFedDCD(
     # Construct clients
     clients = Vector{FedDCDClient}(undef, numClients)
     for i = 1:numClients
-        clients[i] = FedDCDClient(i, Xsplit[i], ysplit[i], config, sgd!)
+        clients[i] = FedDCDClient(i, Xsplit[i], ysplit[i], config, newton!)
     end
     # Construct server
     server = FedDCDServer(X, y, serverConfig)

@@ -1,6 +1,7 @@
 ########################################################################
 # Gradient oracles
 ########################################################################
+include("LogReg/logReg.jl")
 
 # run SVRG to obtain an exact/ineact dual gradient
 function svrg(X::SparseMatrixCSC{Float64, Int64}, Y::Vector{Int64}, w::Matrix{Float64}, y::Matrix{Float64})
@@ -8,13 +9,22 @@ function svrg(X::SparseMatrixCSC{Float64, Int64}, Y::Vector{Int64}, w::Matrix{Fl
 end
 
 # run Newton's method to obtain an exact/ineact dual gradient
-function newton(X::SparseMatrixCSC{Float64, Int64}, Y::Vector{Int64}, w::Matrix{Float64}, y::Matrix{Float64})
-    1
+function newton!(X::SparseMatrixCSC{Float64, Int64}, Xt::SparseMatrixCSC{Float64, Int64}, Y::Vector{Int64}, λ::Float64, W::Matrix{Float64}, y::Matrix{Float64}, η::Float64; T::Int64 = 5, tol::Float64=1e-4)
+    for t = 1:T
+        g = getGradient(X, Xt, Y, W, λ) - y
+        gnorm = norm(g)
+        @printf("gnorm: %4.4e\n", gnorm)
+        if gnorm < tol
+            break
+        end
+        D = ComputeNewtonDirection( X, Xt, Y, W, λ, g)
+        W .-=  D
+    end
 end
 
 # run SGD to obtain an exact/ineact dual gradient
-function sgd!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Vector{Int64}, λ::Float64, W::Matrix{Float64}, y::Matrix{Float64}, η::Float64; T::Int64 = 20, is_lazy::Bool = true)
-    d, n = size(Xt)
+function sgd!(X::SparseMatrixCSC{Float64, Int64}, Xt::SparseMatrixCSC{Float64, Int64}, Y::Vector{Int64}, λ::Float64, W::Matrix{Float64}, y::Matrix{Float64}, η::Float64; T::Int64 = 20, is_lazy::Bool = true)
+    n, d = size(X)
     _, k = size(W)
     if is_lazy
         hitTime = zeros(Int64, d, k)

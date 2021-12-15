@@ -14,7 +14,7 @@ export split_data, splitDataByRow, labelTransform
 export read_libsvm
 export fedAvgAndProx, fedDCD
 export obj, accuracy, getStochasticGrad, getGradient, Hv, ComputeNewtonDirection,SoftmaxNewtonMethod
-export sgd!
+export sgd!, newton!
 
 
 include("src/utils.jl")

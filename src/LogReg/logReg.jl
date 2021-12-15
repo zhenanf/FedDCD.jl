@@ -133,12 +133,12 @@ function ComputeNewtonDirection(
     y::Vector{Int64},
     W::Matrix{Float64},
     λ::Float64,
+    g::Matrix{Float64}
 )
     maxIter = 100
     n, d = size(X)
     _, K = size(W)
-    # Compute gradient.
-    g = getGradient(X, Xt, y, W, λ)
+    # Compute gradient norm.
     gnorm = norm(g)
     tol = 1e-4
 
@@ -148,7 +148,7 @@ function ComputeNewtonDirection(
     p = copy(r)
     for i = 1:maxIter
         rnorm = norm(r)
-        @printf("rnorm: %4.4e\n", rnorm)
+        # @printf("rnorm: %4.4e\n", rnorm)
         if rnorm < tol*gnorm
             break
         end
@@ -184,7 +184,7 @@ function SoftmaxNewtonMethod(
             break
         end
         # Compute Newton direction.
-        D = ComputeNewtonDirection( X, Xt, y, W, λ )
+        D = ComputeNewtonDirection( X, Xt, y, W, λ, g)
         # Use stepsize 1.
         W -=  D
     end

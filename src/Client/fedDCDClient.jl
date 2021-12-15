@@ -25,7 +25,7 @@ function update!(
     client::FedDCDClient
 )
     @printf("Client %d locally update\n", client.id)
-    client.oracle!(client.XtrainT, client.Ytrain, client.λ, client.W, client.y, client.η)
+    client.oracle!(client.Xtrain, client.XtrainT, client.Ytrain, client.λ, client.W, client.y, client.η)
 end
 
 # Get objective value
