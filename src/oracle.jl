@@ -1,7 +1,6 @@
 ########################################################################
 # Gradient oracles
 ########################################################################
-include("LogReg/logReg.jl")
 
 # run SVRG to obtain an exact/ineact dual gradient
 function svrg(X::SparseMatrixCSC{Float64, Int64}, Y::Vector{Int64}, w::Matrix{Float64}, y::Matrix{Float64})
@@ -17,7 +16,7 @@ function newton!(X::SparseMatrixCSC{Float64, Int64}, Xt::SparseMatrixCSC{Float64
         if gnorm < tol
             break
         end
-        D = ComputeNewtonDirection( X, Xt, Y, W, λ, g)
+        D = ComputeNewtonDirection2( X, Xt, Y, W, λ, g)
         W .-=  D
     end
 end

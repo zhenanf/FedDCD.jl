@@ -1,10 +1,8 @@
 using LinearAlgebra
 using SparseArrays
 
-@doc raw"""
-    Calculate the objective of logistic regression:
-    \frac{1}{n} \sum_{i=1}^n \log( 1 + \exp( -w^T x_i y_i ) ) + \lambda/2 \|w\|^2.
-    """
+# Calculate the objective of logistic regression:
+# \frac{1}{n} \sum_{i=1}^n \log( 1 + \exp( -w^T x_i y_i ) ) + \lambda/2 \|w\|^2.
 function obj(
     X::SparseMatrixCSC{Float64, Int64},
     y::Vector{Int64},
@@ -23,9 +21,8 @@ function obj(
     return objval
 end
 
-"""
-    Calculate the accuracy
-"""
+
+# Calculate the accuracy
 function accuracy(
     X::SparseMatrixCSC{Float64, Int64},
     y::Vector{Int64},
@@ -43,9 +40,8 @@ function accuracy(
     return ret/n
 end
 
-"""
-    Calculate the stochastic gradient
-"""
+
+# Calculate the stochastic gradient
 function getStochasticGrad(
     Xt::SparseMatrixCSC{Float64, Int64},
     y::Vector{Int64},
@@ -61,9 +57,8 @@ function getStochasticGrad(
 end
 
 
-"""
-    Calculate gradient
-"""
+
+# Calculate gradient
 function getGradient(
     X::SparseMatrixCSC{Float64, Int64},
     Xt::SparseMatrixCSC{Float64, Int64},
@@ -86,9 +81,8 @@ function getGradient(
     return g
 end
 
-"""
-    Hessian-vector product for softmax regression.
-"""
+
+# Hessian-vector product for softmax regression.
 function Hv(
     X::SparseMatrixCSC{Float64, Int64},
     Xt::SparseMatrixCSC{Float64, Int64},
@@ -124,9 +118,8 @@ function Hv(
     return ret
 end
 
-"""
-    Compute Newton direction. Use conjugate gradient to solve the linear system H D = g.
-"""
+
+# Compute Newton direction. Use conjugate gradient to solve the linear system H D = g.
 function ComputeNewtonDirection(
     X::SparseMatrixCSC{Float64, Int64},
     Xt::SparseMatrixCSC{Float64, Int64},
@@ -163,9 +156,27 @@ function ComputeNewtonDirection(
     return D
 end
 
-"""
-    Using Newton's method to solve the softmax classification problem.
-"""
+
+# Compute Newton direction. Use lsmr to solve the linear system H D = g.
+function ComputeNewtonDirection2(
+    X::SparseMatrixCSC{Float64, Int64},
+    Xt::SparseMatrixCSC{Float64, Int64},
+    y::Vector{Int64},
+    W::Matrix{Float64},
+    λ::Float64,
+    g::Matrix{Float64}
+)
+    n, d = size(X)
+    _, K = size(W)
+    
+    H = LinearMap(v->vec(Hv(X, Xt, W, λ, reshape(v,d,K))), d*K, issymmetric=true, isposdef=true)
+    D = lsmr(H, vec(g))
+
+    return reshape(D, d, K)
+end
+
+
+# Using Newton's method to solve the softmax classification problem.
 function SoftmaxNewtonMethod(
     X::SparseMatrixCSC{Float64, Int64},
     Xt::SparseMatrixCSC{Float64, Int64},
