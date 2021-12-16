@@ -15,7 +15,10 @@ function neg_log_loss(z::Vector{Float64}, y::Int64)
 end
 
 # Label transformation
-function labelTransform(y::Vector{Int64})
+function labelTransform(
+    y::Vector{Int64},
+    yTest::Vector{Int64} = nothing
+    )
     d = Dict{Int64, Int64}()
     uniqueLabels = unique(y)
     cc = 1
@@ -25,7 +28,10 @@ function labelTransform(y::Vector{Int64})
             cc += 1
         end
     end
-    return [ d[x] for x in y ]
+    if yTest != nothing
+        yTest = [ d[x] for x in yTest ]
+    end
+    return [ d[x] for x in y ], yTest
 end
 
 # horizontally split data

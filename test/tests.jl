@@ -15,7 +15,7 @@ function TestFedAvgAndProx(
     # filename = "data/rcv1_train.binary"
     # filename = "data/mnist.scale"
     X, y = read_libsvm(filename);
-    y = labelTransform(y)
+    y, y = labelTransform(y, y)
     numClasses = length( unique(y) )
     # Split data
     Xsplit, ysplit = splitDataByRow(X, y, numClients)    
@@ -51,15 +51,38 @@ function TestFedAvgAndProx(
 end
 
 function TestNewtonMethod()
-    filename = "data/mnist.scale"
-    X, y = read_libsvm(filename);
-    XT = copy(X')
-    y = labelTransform(y)
-    K = length( unique(y) )
+    fileTrain = "data/mnist.scale"
+    fileTest = "data/mnist.scale.t"
+    X, Y = read_libsvm(fileTrain);
+    Xtest, Ytest = read_libsvm(fileTest)
+    Xt = copy(X')
+    Y, Ytest = labelTransform(Y, Ytest)
+    K = length( unique(Y) )
     n, d = size(X)
+    I, J, V = findnz(Xtest)
+    Xtest = sparse(I, J, V, size(Xtest,1), d)
+    @show(size(X))
+    @show(size(Xtest))
     W = zeros(Float64, d, K)
-    lambda = 1e-2
+    λ = 1e-4
 
-    W = SoftmaxNewtonMethod(X, XT, y, W, lambda)
+    maxIter = 20
+    tol = 1e-4
+    startTime = time()
+    for iter = 1:maxIter
+        objval = obj(X, Y, W, λ)
+        g = getGradient(X, Xt, Y, W, λ)
+        accTrain = accuracy(X, Y, W)
+        accTest = accuracy(Xtest, Ytest, W)
+        gnorm = norm(g)
+        @printf("Iter %3d, obj: %4.5e, gnorm: %4.5e, train: %3.3f, test: %3.3f, time: %4.2f\n", iter, objval, gnorm, accTrain*100, accTest*100, time()-startTime)
+        if gnorm < tol
+            break
+        end
+        # Compute Newton direction.
+        D = ComputeNewtonDirection2( X, Xt, Y, W, λ, g)
+        # Use stepsize 1.
+        W -=  D
+    end
     
 end

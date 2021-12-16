@@ -76,6 +76,6 @@ end
 function getObjValue(
     client::FedProxClient
 )
-    objValue = obj(client.Xtrain, client.Ytrain, client.W, client.lambda)
+    objValue = obj(client.Xtrain, client.Ytrain, client.W, client.λ)
     return objValue
 end

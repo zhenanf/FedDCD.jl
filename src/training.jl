@@ -24,7 +24,8 @@ function fedAvgAndProx(
         end
         aggregate!(server)
         # Print log
-        objValue = obj(server.Xtest, server.Ytest, server.W, clients[1].λ)
+        sendModelToAllClients!(server)
+        objValue = getObjValue(server)
         acc = accuracy(server.Xtest, server.Ytest, server.W)
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%\n", t, objValue, acc*100)
     end

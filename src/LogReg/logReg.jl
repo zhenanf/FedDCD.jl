@@ -7,7 +7,7 @@ function obj(
     X::SparseMatrixCSC{Float64, Int64},
     y::Vector{Int64},
     W::Matrix{Float64},
-    lambda::Float64
+    λ::Float64
 )
     n, _ = size(X)
     XW = X*W
@@ -17,7 +17,7 @@ function obj(
         objval += -log(prob[ y[i] ])
     end
     objval /= n
-    objval += lambda/2*norm(W)^2
+    objval += λ/2*norm(W)^2
     return objval
 end
 

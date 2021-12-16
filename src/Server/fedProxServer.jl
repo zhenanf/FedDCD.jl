@@ -39,6 +39,17 @@ function sendModel!(
     return nothing
 end
 
+# Send global model to all clients
+function sendModelToAllClients!(
+    server::FedProxServer
+)
+    # Only send model to selected clients
+    for client in server.clients
+        client.W = copy(server.W)
+    end
+    return nothing
+end
+
 # Aggregation
 function aggregate!(
     server::FedProxServer

@@ -9,13 +9,13 @@ using Distributed
 using LinearMaps
 using IterativeSolvers
 
-export FedProxClient, FedDCDClient
-export FedProxServer, FedDCDServer
+export FedProxClient, FedDCDClient, getObjValue
+export FedProxServer, FedDCDServer, getObjValue
 export softmax, neg_log_loss
 export split_data, splitDataByRow, labelTransform
 export read_libsvm
 export fedAvgAndProx, fedDCD
-export obj, accuracy, getStochasticGrad, getGradient, Hv, ComputeNewtonDirection,SoftmaxNewtonMethod
+export obj, accuracy, getStochasticGrad, getGradient, Hv, ComputeNewtonDirection, ComputeNewtonDirection2, SoftmaxNewtonMethod
 export sgd!, newton!
 
 
