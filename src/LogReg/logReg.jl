@@ -170,7 +170,7 @@ function ComputeNewtonDirection2(
     _, K = size(W)
     
     H = LinearMap(v->vec(Hv(X, Xt, W, λ, reshape(v,d,K))), d*K, issymmetric=true, isposdef=true)
-    D = lsmr(H, vec(g))
+    D = lsmr(H, vec(g), atol=1e-3, btol=1e-3)
 
     return reshape(D, d, K)
 end
