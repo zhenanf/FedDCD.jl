@@ -20,7 +20,7 @@ function testFedDCD(
     # Setup config, running FedAvg if mu=0.
     config = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-5,
+        "lambda" => 1e-2,
         "mu" => 0,
         "learning_rate" => 1e-3,
     )

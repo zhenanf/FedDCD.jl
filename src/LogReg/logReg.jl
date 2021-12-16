@@ -90,6 +90,8 @@ function Hv(
     λ::Float64,
     V::Matrix{Float64}
 )
+    @printf("Using naive Hessian-vector product oracle\n")
+    # Time complexity is O( nnz(X)*K^2 )
     n, d = size(X)
     _, K = size(W)
     XW = X*W
@@ -118,6 +120,60 @@ function Hv(
     return ret
 end
 
+# Add a dense matrix with a sparse matrix in place, A = A + x * b', x sparse, b dense.
+function FastHvMatrixUpdate!(
+    A::Matrix{Float64},
+    x::SparseVector{Float64,Int64},
+    b::Vector{Float64}
+)
+    I, V = findnz(x)
+    K = length(b)
+    @inbounds for col = 1:K 
+        @inbounds for idx = 1:length(I)
+            row = I[idx]
+            v = V[idx]
+            A[row, col] += v*b[col]
+        end
+    end
+    return nothing
+end
+
+# Fast Hessian-vector product for softmax classification
+function FastHv(
+    X::SparseMatrixCSC{Float64, Int64},
+    Xt::SparseMatrixCSC{Float64, Int64},
+    W::Matrix{Float64},
+    λ::Float64,
+    V::Matrix{Float64}
+)
+    # Time complexity is O( nnz(X)*K )
+    n, d = size(X)
+    _, K = size(W)
+    XW = X*W
+    XV = X*V
+    P = zeros(Float64, n, K)
+    ret = zeros(Float64, d, K)
+    for i = 1:n
+        P[i,:] = softmax( XW[i,:] )
+    end
+    @inbounds for i = 1:n 
+        # Complexity of the loop: nnz(xi)*K
+        # Calculate (x_i x_i^T V ( Λ - p_i p_i^T ) )
+        xi = Xt[:, i]
+        ppi = P[i, :]
+        # First calculate x_i^T V
+        xtV = XV[i, :]
+        # # Calculate x_i^T V ( Λ - p_i p_i^T )
+        xtVppt = xtV .* ppi
+        xtVppt -= dot(xtV, ppi) .* ppi
+        # # Calculate x_i x_i^T V ( Λ - p_i p_i^T )
+        FastHvMatrixUpdate!( ret, xi, xtVppt)
+        # ret += xi*xtVppt'
+    end
+    ret ./= n
+    ret += λ.*V
+    return ret
+end
 
 # Compute Newton direction. Use conjugate gradient to solve the linear system H D = g.
 function ComputeNewtonDirection(
@@ -169,8 +225,8 @@ function ComputeNewtonDirection2(
     n, d = size(X)
     _, K = size(W)
     
-    H = LinearMap(v->vec(Hv(X, Xt, W, λ, reshape(v,d,K))), d*K, issymmetric=true, isposdef=true)
-    D = lsmr(H, vec(g), atol=1e-3, btol=1e-3)
+    H = LinearMap(v->vec(FastHv(X, Xt, W, λ, reshape(v,d,K))), d*K, issymmetric=true, isposdef=true)
+    D = cg(H, vec(g), abstol=1e-4, reltol=1e-4, maxiter=100)
 
     return reshape(D, d, K)
 end
@@ -186,16 +242,17 @@ function SoftmaxNewtonMethod(
     maxIter::Int64=20,
     tol::Float64=1e-4
 )
+    startTime = time()
     for iter = 1:maxIter
         objval = obj(X, y, W, λ)
         g = getGradient(X, Xt, y, W, λ)
         gnorm = norm(g)
-        @printf("Iter %3d, obj: %4.5e, gnorm: %4.5e\n", iter, objval, gnorm)
+        @printf("Iter %3d, obj: %4.5e, gnorm: %4.5e, time: %4.2f\n", iter, objval, gnorm, time()-startTime)
         if gnorm < tol
             break
         end
         # Compute Newton direction.
-        D = ComputeNewtonDirection( X, Xt, y, W, λ, g)
+        D = ComputeNewtonDirection2( X, Xt, y, W, λ, g)
         # Use stepsize 1.
         W -=  D
     end
