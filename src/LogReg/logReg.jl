@@ -57,7 +57,6 @@ function getStochasticGrad(
 end
 
 
-
 # Calculate gradient
 function getGradient(
     X::SparseMatrixCSC{Float64, Int64},
@@ -70,11 +69,18 @@ function getGradient(
     _, K = size(W)
     g = zeros(Float64, d, K)
     XW = X*W
-    for i = 1:n
+    @inbounds for i = 1:n
         s = softmax( XW[i,:] )
         s[ y[i] ] -= 1
         x = Xt[:,i]
-        g += (x*s')
+        I, V = findnz(x)
+        @inbounds for col = 1:K
+            @inbounds for j = 1:length(I)
+                row = I[j]
+                val = V[j]
+                g[row, col] += val*s[col]
+            end
+        end
     end
     g ./= n
     g += λ.*W

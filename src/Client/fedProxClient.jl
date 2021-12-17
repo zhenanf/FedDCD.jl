@@ -26,7 +26,7 @@ end
 function update!(
     client::FedProxClient
 )
-    @printf("Client %d running SGD\n", client.id)
+    # @printf("Client %d running SGD\n", client.id)
     # Implement K epochs SGD, using lazy update to avoid dense update from the regularization.
     n, d = size(client.Xtrain)
     _, K = size(client.W)
@@ -49,7 +49,7 @@ function update!(
                 # Lazy update
                 delay = timeStep-hitTime[idx1, idx2]
                 client.W[idx1, idx2] *= (1 - lr*(λ+μ))^delay
-                # client.W[idx1, idx2] += lr*μ*delay*Wold[idx1, idx2]
+                client.W[idx1, idx2] += lr*μ*delay*Wold[idx1, idx2]
                 client.W[idx1, idx2] -= lr*V[j]
                 # Update hitTime to the current time
                 hitTime[idx1, idx2] = timeStep
@@ -63,7 +63,7 @@ function update!(
                 if hitTime[j, k] < timeStep
                     delay = timeStep-hitTime[j, k]
                     client.W[j, k] *= (1 - lr*λ)^delay
-                    # client.W[j, k] += lr*μ*delay*Wold[j, k]
+                    client.W[j, k] += lr*μ*delay*Wold[j, k]
                 end
             end
         end

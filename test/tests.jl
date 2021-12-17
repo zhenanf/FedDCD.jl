@@ -4,28 +4,38 @@ using SparseArrays
 using Random
 # Testing FedAvg
 # testFedAvg("data/rcv1_train.binary")
+# TestFedAvgAndProx("data/")
 function TestFedAvgAndProx(
-    filename::String,
+    fileTrain::String,
+    fileTest::String
     # participationRate::Float64,
     # lambda::Float64
     )
-    numClients = 10
+    numClients = 100
     numRounds = 100
     # Read data
     # filename = "data/rcv1_train.binary"
     # filename = "data/mnist.scale"
-    X, y = read_libsvm(filename);
-    y, y = labelTransform(y, y)
-    numClasses = length( unique(y) )
+    Xtrain, Ytrain = read_libsvm(fileTrain)
+    Xtest, Ytest = read_libsvm(fileTest)
+    Ytrain, Ytest = labelTransform(Ytrain, Ytest)
+    # Set Xtrain and Xtest same number of feature
+    Itr, Jtr, Vtr = findnz(Xtrain)
+    Ite, Jte, Vte = findnz(Xtest)
+    d = max( size(Xtrain, 2), size(Xtest, 2) )
+    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d)
+    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d)
+    
+    numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
     # Split data
-    Xsplit, ysplit = splitDataByRow(X, y, numClients)    
+    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)    
 
     # Setup config, running FedAvg if mu=0.
-    config = Dict(
+    clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-2,
-        "mu" => 0,
-        "learning_rate" => 1e-4,
+        "lambda" => 1e-3,
+        "mu" => 1e-2,
+        "learning_rate" => 1e-3,
         "numLocalEpochs" => 5,
     )
 
@@ -38,14 +48,23 @@ function TestFedAvgAndProx(
     # Construct clients
     clients = Vector{FedProxClient}(undef, numClients)
     for i = 1:numClients
-        clients[i] = FedProxClient(i, Xsplit[i], ysplit[i], config)
+        clients[i] = FedProxClient(i, Xsplit[i], Ysplit[i], clientConfig)
     end
     # Construct server
-    server = FedProxServer(X, y, serverConfig)
+    server = FedProxServer(Xtest, Ytest, serverConfig)
 
     # Train
-    W = fedAvgAndProx(server, clients, numRounds);
-
+    _, objList, testAccList = fedAvgAndProx(server, clients, numRounds)
+    writeToFile(
+        "mnist",
+        "softmax classification",
+        serverConfig,
+        clientConfig,
+        objList,
+        testAccList,
+        "results/FedProx_logReg_lambda1e-3.csv"    # file stored.
+    )
+    # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
     @printf("Test finished!\n")
 end
@@ -53,6 +72,8 @@ end
 function TestNewtonMethod()
     fileTrain = "data/mnist.scale"
     fileTest = "data/mnist.scale.t"
+    fileTrain = "data/rcv1_train.multiclass"
+    fileTest = "data/rcv1_train.multiclass"
     X, Y = read_libsvm(fileTrain);
     Xtest, Ytest = read_libsvm(fileTest)
     Xt = copy(X')
@@ -64,10 +85,11 @@ function TestNewtonMethod()
     @show(size(X))
     @show(size(Xtest))
     W = zeros(Float64, d, K)
-    λ = 1e-4
+    λ = 1e-5
 
     maxIter = 20
     tol = 1e-4
+    @printf("start training!\n")
     startTime = time()
     for iter = 1:maxIter
         objval = obj(X, Y, W, λ)

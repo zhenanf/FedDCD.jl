@@ -2,6 +2,37 @@
 # Helper Functions
 ########################################################################
 
+# Write results to CSV.
+function writeToFile(
+    dataName::String,
+    modelName::String,
+    serverConfig::Dict,
+    clientConfig::Dict,
+    objList::Vector{Float64},
+    testAccList::Vector{Float64},
+    filename::String
+)
+    f = open(filename, "w")
+    println(f, "# Configuration:\n")
+    println(f, "dataset name: "*dataName)
+    println(f, "model name: "*modelName)
+    for (key, value) in serverConfig
+        println(f, string(key)*": "*string(value))
+    end
+    for (key, value) in clientConfig
+        println(f, string(key)*": "*string(value))
+    end
+    println(f, "# Results:\n")
+    println(f, "round,obj,test")
+    T = length(objList)
+    for t = 1:T
+        line = string(t)*","*string(objList[t])*","*string(testAccList[t])
+        println(f, line )
+    end
+    close(f)
+    return nothing
+end
+
 # softmax function
 function softmax(z::Vector{Float64})
     expz = exp.(z)
@@ -17,10 +48,10 @@ end
 # Label transformation
 function labelTransform(
     y::Vector{Int64},
-    yTest::Vector{Int64} = nothing
+    yTest::Vector{Int64}
     )
     d = Dict{Int64, Int64}()
-    uniqueLabels = unique(y)
+    uniqueLabels = union( Set(y), Set(yTest) )
     cc = 1
     for label in uniqueLabels
         if !haskey(d, label)
@@ -28,10 +59,9 @@ function labelTransform(
             cc += 1
         end
     end
-    if yTest != nothing
-        yTest = [ d[x] for x in yTest ]
-    end
-    return [ d[x] for x in y ], yTest
+    y = [ d[x] for x in y ]
+    yTest = [ d[x] for x in yTest ]
+    return y, yTest
 end
 
 # horizontally split data

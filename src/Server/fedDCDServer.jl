@@ -39,7 +39,7 @@ function sendModel!(
     for i = 1:server.τ
         idx = server.selectedIndices[i]
         # server.clients[idx].W .-= copy(server.W)
-        server.clients[idx].y .-= server.clients[idx].λ * (server.clients[idx].W - server.W)
+        server.clients[idx].y .-= (server.η * server.clients[idx].λ) * (server.clients[idx].W - server.W)
     end
     return nothing
 end
