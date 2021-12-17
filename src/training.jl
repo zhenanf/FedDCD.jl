@@ -38,7 +38,7 @@ function fedAvgAndProx(
     return server.W, objList, testAccList
 end
 
-# Implementation of the FedDCD algorithm
+# Implementation of the FedDCD algorithm (both exact and inexact)
 function fedDCD(
     server::FedDCDServer,
     clients::Vector{FedDCDClient},
@@ -58,6 +58,54 @@ function fedDCD(
         end
         aggregate!(server)
         sendModel!(server)
+        # Print log
+        objValue = obj(server.Xtest, server.Ytest, server.W, clients[1].λ)
+        acc = accuracy(server.Xtest, server.Ytest, server.W)
+        @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%\n", t, objValue, acc*100)
+    end
+    endTime = time()
+    @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
+    return server.W
+end
+
+
+# Implementation of the accelerated FedDCD algorithm
+function accfedDCD(
+    server::AccFedDCDServer,
+    clients::Vector{AccFedDCDClient},
+    numRounds::Int64
+)
+    # Connect clients with server
+    server.clients = clients
+    # Training process
+    startTime = time()
+    @printf("Start training!\n")
+    for t = 1:numRounds
+        @printf("Round %d\n", t)
+        # update v
+        for client in server.clients
+            updatev!(client)
+        end
+        # first inner round
+        select!(server)
+        for idx in server.selectedIndices
+            client = server.clients[idx]
+            updateW!(client, 1)
+        end
+        aggregate!(server)
+        sendModel!(server, 1)
+        # update u
+        for client in server.clients
+            updateu!(client)
+        end
+        # second inner round
+        select!(server)
+        for idx in server.selectedIndices
+            client = server.clients[idx]
+            updateW!(client, 2)
+        end
+        aggregate!(server)
+        sendModel!(server, 2)
         # Print log
         objValue = obj(server.Xtest, server.Ytest, server.W, clients[1].λ)
         acc = accuracy(server.Xtest, server.Ytest, server.W)
