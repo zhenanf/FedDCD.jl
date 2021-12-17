@@ -25,7 +25,7 @@ function TestFedAvgAndProx(
         "num_classes" => numClasses,
         "lambda" => 1e-2,
         "mu" => 0,
-        "learning_rate" => 1e-1,
+        "learning_rate" => 1e-4,
         "numLocalEpochs" => 5,
     )
 

@@ -12,7 +12,7 @@ function testFedDCD(
     numRounds = 100
     # Read data
     X, y = read_libsvm(filename);
-    y = labelTransform(y)
+    y, y = labelTransform(y, y)
     numClasses = length( unique(y) )
     # Split data
     Xsplit, ysplit = splitDataByRow(X, y, numClients)    
@@ -29,7 +29,7 @@ function testFedDCD(
         "num_classes" => numClasses,
         "num_clients" => numClients,
         "participation_rate" => 0.3,
-        "learning_rate" => 1e-2,
+        "learning_rate" => 1.0,
     )
 
     # Construct clients

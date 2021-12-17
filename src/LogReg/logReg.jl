@@ -226,7 +226,7 @@ function ComputeNewtonDirection2(
     _, K = size(W)
     
     H = LinearMap(v->vec(FastHv(X, Xt, W, λ, reshape(v,d,K))), d*K, issymmetric=true, isposdef=true)
-    D = cg(H, vec(g), abstol=1e-4, reltol=1e-4, maxiter=100)
+    D = cg(H, vec(g), abstol=1e-8, reltol=1e-4, maxiter=100)
 
     return reshape(D, d, K)
 end
