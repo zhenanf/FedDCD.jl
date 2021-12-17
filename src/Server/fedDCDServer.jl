@@ -112,7 +112,9 @@ function sendModel!(server::AccFedDCDServer, round::Int64)
         if round == 1
             server.clients[idx].y .-= (server.η * server.clients[idx].λ) * (server.clients[idx].W - server.W)
         else
-            server.clients[idx].z .-= (server.η * server.clients[idx].λ) * (server.clients[idx].W - server.W)
+            a = server.clients[idx].a; b = server.clients[idx].b; r = server.clients[idx].r
+            θ = a*r / (a^2 + b)
+            server.clients[idx].z .-= (server.η * server.clients[idx].λ * θ) * (server.clients[idx].W - server.W)
         end
     end
     return nothing

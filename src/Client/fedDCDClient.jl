@@ -67,7 +67,7 @@ mutable struct AccFedDCDClient{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float
         v = zeros(Float64, d, numClasses)
         u = zeros(Float64, d, numClasses)
         XtrainT = copy(Xtrain')
-        κ = λ/10
+        κ = λ
         a = sqrt(κ) / (1/r + sqrt(κ))
         b = a*κ*r^2
         new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Matrix{Float64}, Vector{Int64}, Function}(id, Xtrain, XtrainT, Ytrain, W, y, z, v, u, η, r, λ, κ, a, b, oracle!)
@@ -75,14 +75,9 @@ mutable struct AccFedDCDClient{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float
 end
 
 # Model updates on local device
-function updateW!(client::AccFedDCDClient, round::Int64)
+function updateW!(client::AccFedDCDClient)
     @printf("Client %d locally update\n", client.id)
     client.oracle!(client.Xtrain, client.XtrainT, client.Ytrain, client.λ, client.W, client.v, client.η)
-    if round == 2
-        a = client.a; b = client.b; r = client.r
-        θ = a*r / (a^2 + b)
-        client.W .*= θ
-    end
 end
 
 function updatev!(client::AccFedDCDClient)

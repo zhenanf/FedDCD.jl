@@ -90,7 +90,7 @@ function accfedDCD(
         select!(server)
         for idx in server.selectedIndices
             client = server.clients[idx]
-            updateW!(client, 1)
+            updateW!(client)
         end
         aggregate!(server)
         sendModel!(server, 1)
@@ -102,7 +102,7 @@ function accfedDCD(
         select!(server)
         for idx in server.selectedIndices
             client = server.clients[idx]
-            updateW!(client, 2)
+            updateW!(client)
         end
         aggregate!(server)
         sendModel!(server, 2)
