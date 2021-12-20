@@ -69,6 +69,72 @@ function TestFedAvgAndProx(
     @printf("Test finished!\n")
 end
 
+# Test function for Scaffold
+# TestScaffold("data/mnist.scale", "data/mnist.scale.t")
+function TestScaffold(
+    fileTrain::String,
+    fileTest::String
+    # participationRate::Float64,
+    # lambda::Float64
+    )
+    numClients = 100
+    numRounds = 100
+    # Read data
+    # filename = "data/rcv1_train.binary"
+    # filename = "data/mnist.scale"
+    Xtrain, Ytrain = read_libsvm(fileTrain)
+    Xtest, Ytest = read_libsvm(fileTest)
+    Ytrain, Ytest = labelTransform(Ytrain, Ytest)
+    # Set Xtrain and Xtest same number of feature
+    Itr, Jtr, Vtr = findnz(Xtrain)
+    Ite, Jte, Vte = findnz(Xtest)
+    d = max( size(Xtrain, 2), size(Xtest, 2) )
+    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d)
+    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d)
+    
+    numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
+    # Split data
+    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)    
+
+    # Setup config, running FedAvg if mu=0.
+    clientConfig = Dict(
+        "num_classes" => numClasses,
+        "lambda" => 1e-3,
+        "learning_rate" => 1e-3,
+        "numLocalEpochs" => 5,
+    )
+
+    serverConfig = Dict(
+        "num_classes" => numClasses,
+        "num_clients" => numClients,
+        "participation_rate" => 0.3,
+        "learning_rate" => 1.0
+    )
+
+    # Construct clients
+    clients = Vector{ScaffoldClient}(undef, numClients)
+    for i = 1:numClients
+        clients[i] = ScaffoldClient(i, Xsplit[i], Ysplit[i], clientConfig)
+    end
+    # Construct server
+    server = ScaffoldServer(Xtest, Ytest, serverConfig)
+
+    # Train
+    _, objList, testAccList = Scaffold(server, clients, numRounds)
+    writeToFile(
+        "mnist",
+        "softmax classification",
+        serverConfig,
+        clientConfig,
+        objList,
+        testAccList,
+        "results/Scaffold_logReg_lambda1e-3.csv"    # file stored.
+    )
+    # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
+
+    @printf("Test finished!\n")
+end
+
 function TestNewtonMethod()
     fileTrain = "data/mnist.scale"
     fileTest = "data/mnist.scale.t"

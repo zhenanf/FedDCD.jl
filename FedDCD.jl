@@ -11,12 +11,12 @@ using IterativeSolvers
 using DataFrames
 using CSV
 
-export FedProxClient, FedDCDClient, AccFedDCDClient, getObjValue
-export FedProxServer, FedDCDServer, AccFedDCDServer, getObjValue
+export FedProxClient, ScaffoldClient, FedDCDClient, AccFedDCDClient, getObjValue
+export FedProxServer, ScaffoldServer, FedDCDServer, AccFedDCDServer, getObjValue
 export softmax, neg_log_loss
 export split_data, splitDataByRow, labelTransform, writeToFile
 export read_libsvm
-export fedAvgAndProx, fedDCD, accfedDCD
+export fedAvgAndProx, Scaffold, fedDCD, accfedDCD
 export obj, accuracy, getStochasticGrad, getGradient, Hv, ComputeNewtonDirection, ComputeNewtonDirection2, SoftmaxNewtonMethod, lineSearch
 export sgd!, newton!
 

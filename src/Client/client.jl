@@ -17,6 +17,7 @@ function update! end
 # function download end
 
 include("fedProxClient.jl")
+include("ScaffoldClient.jl")
 include("fedDCDClient.jl")
 
 

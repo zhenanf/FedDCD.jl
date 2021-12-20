@@ -26,6 +26,42 @@ function fedAvgAndProx(
         end
         aggregate!(server)
         # Print log
+        # sendModelToAllClients!(server)
+        objValue = getObjValue(server)
+        acc = accuracy(server.Xtest, server.Ytest, server.W)
+        @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
+        push!(objList, objValue)
+        push!(testAccList, acc)
+    end
+    endTime = time()
+    @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
+    return server.W, objList, testAccList
+end
+
+# Implementation of the Scaffold algorithm.
+function Scaffold(
+    server::ScaffoldServer,
+    clients::Vector{ScaffoldClient},
+    numRounds::Int64
+)
+    # Connect clients with server
+    server.clients = clients
+    # Training process
+    objList = zeros(Float64, 0)
+    testAccList = zeros(Float64, 0)
+    startTime = time()
+    @printf("Start training!\n")
+    for t = 1:numRounds
+        select!(server)
+        sendModel!(server)
+        # objValue = getObjValue(server)
+        # @printf("Round : %4d, obj: %6.4e\n", t, objValue)
+        for idx in server.selectedIndices
+            client = server.clients[idx]
+            update!(client)
+        end
+        aggregate!(server)
+        # Print log
         sendModelToAllClients!(server)
         objValue = getObjValue(server)
         acc = accuracy(server.Xtest, server.Ytest, server.W)

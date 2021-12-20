@@ -32,7 +32,7 @@ function TestFedDCD(
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-2,
+        "lambda" => 1e-3,
         "mu" => 0,
         "learning_rate" => 1e-3,
         "participation_rate" => 0.3,
@@ -63,7 +63,7 @@ function TestFedDCD(
         clientConfig,
         objList,
         testAccList,
-        "results/FedDCDv2_logReg_lambda1e-2.csv"    # file stored.
+        "results/FedDCDv2_logReg_lambda1e-3.csv"    # file stored.
     )
 
     @printf("Test finished!\n")

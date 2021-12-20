@@ -1,0 +1,21 @@
+# Configuration:
+
+dataset name: mnist
+model name: softmax classification
+num_clients: 100
+learning_rate: 0.99
+participation_rate: 0.3
+num_classes: 10
+learning_rate: 0.001
+lambda: 0.01
+participation_rate: 0.3
+mu: 0
+num_classes: 10
+# Results:
+
+round,obj,test
+1,0.5772557015556142,0.88055
+2,0.5715653933661785,0.8836666666666667
+3,0.5666595164408005,0.8872166666666667
+4,0.5645012937818087,0.88955
+5,0.5637972294555998,0.8908
