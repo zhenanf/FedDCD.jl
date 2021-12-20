@@ -12,12 +12,13 @@ function newton!(X::SparseMatrixCSC{Float64, Int64}, Xt::SparseMatrixCSC{Float64
     for t = 1:T
         g = getGradient(X, Xt, Y, W, λ) - y
         gnorm = norm(g)
-        @printf("   gnorm: %4.4e\n", gnorm)
+        # @printf("   gnorm: %4.4e\n", gnorm)
         if gnorm < tol
             break
         end
         D = ComputeNewtonDirection2( X, Xt, Y, W, λ, g)
-        W .-=  D
+        η = lineSearch(X, Y, D, W, g, λ)
+        W .-= η*D
     end
 end
 

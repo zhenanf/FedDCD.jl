@@ -21,6 +21,57 @@ function obj(
     return objval
 end
 
+# Line-search for softmax
+function lineSearch(
+    X::SparseMatrixCSC{Float64, Int64},
+    y::Vector{Int64},
+    D::Matrix{Float64},
+    W::Matrix{Float64},
+    G::Matrix{Float64},
+    λ::Float64
+)
+    maxLineSearchSteps = 100
+    GTD = dot(G, D)
+    Wnorm = norm(W)
+    XW = X*W
+    XD = X*D
+    
+    n = size(X, 1)
+    objval = 0.0
+    @inbounds for i = 1:n
+        prob = softmax(XW[i,:])
+        objval += -log(prob[ y[i] ])
+    end
+    objval /= n
+    objval += λ/2*Wnorm^2
+    
+    Wnew = zeros(Float64, size(W))
+    XWnew = zeros(Float64, size(XW))
+
+    η = 1.0
+    β = 1e-2
+    for t = 1:maxLineSearchSteps
+        Wnew .= W - η*D
+        XWnew .= XW - η*XD
+        objNew = 0.0
+        @inbounds for i = 1:n
+            prob = softmax(XWnew[i,:])
+            objNew += -log(prob[ y[i] ])
+        end
+        objNew /= n
+        objNew += λ/2*norm(Wnew)^2
+        if objNew - objval > β*η*GTD
+            η *= 0.5
+        else
+            break
+        end
+        if t == maxLineSearchSteps
+            @warn("Reached maximum linesearch steps.")
+        end
+    end
+    return η
+end
+
 
 # Calculate the accuracy
 function accuracy(
@@ -259,8 +310,8 @@ function SoftmaxNewtonMethod(
         end
         # Compute Newton direction.
         D = ComputeNewtonDirection2( X, Xt, y, W, λ, g)
-        # Use stepsize 1.
-        W -=  D
+        η = lineSearch(X, Y, D, W, g, λ)
+        W .-= η*D
     end
     return W
 end

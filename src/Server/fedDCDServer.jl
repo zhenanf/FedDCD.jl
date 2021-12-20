@@ -44,6 +44,17 @@ function sendModel!(
     return nothing
 end
 
+# Send global model to all clients
+function sendModelToAllClients!(
+    server::FedDCDServer
+)
+    # Only send model to selected clients
+    for client in server.clients
+        client.W = copy(server.W)
+    end
+    return nothing
+end
+
 # Aggregation
 function aggregate!(
     server::FedDCDServer
@@ -58,19 +69,6 @@ function aggregate!(
     return nothing
 end
 
-# Calculate objective value
-function getObjValue(
-    server::FedDCDServer
-)
-    objValue = 0.0
-    totalNumData = 0
-    for i = 1:server.num_clients
-        n = size(server.clients[i].Xtrain, 1)
-        totalNumData += n
-        objValue += n * getObjValue(server.clients[i])
-    end
-    return objValue / totalNumData
-end
 
 ########################################################################################################
 mutable struct AccFedDCDServer{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Vector{Int64}, T5<:Vector{AccFedDCDClient}, T6<:Matrix{Float64}} <:AbstractServer
@@ -105,16 +103,39 @@ function select!(server::AccFedDCDServer)
 end
 
 # Send global model
+# function sendModel!(server::AccFedDCDServer, round::Int64)
+#     # Only send model to selected clients
+#     for i = 1:server.τ
+#         idx = server.selectedIndices[i]
+#         if round == 1
+#             server.clients[idx].y .-= (server.η * server.clients[idx].λ) * (server.clients[idx].W - server.W)
+#         else
+#             a = server.clients[idx].a; b = server.clients[idx].b; r = server.clients[idx].r
+#             θ = a*r / (a^2 + b)
+#             server.clients[idx].z .-= (server.η * server.clients[idx].λ * θ) * (server.clients[idx].W - server.W)
+#         end
+#     end
+#     return nothing
+# end
+
 function sendModel!(server::AccFedDCDServer, round::Int64)
-    # Only send model to selected clients
-    for i = 1:server.τ
-        idx = server.selectedIndices[i]
-        if round == 1
-            server.clients[idx].y .-= (server.η * server.clients[idx].λ) * (server.clients[idx].W - server.W)
+    # Only send model to selected clients, but all clients need to update 
+    for i = 1:server.num_clients
+        client = server.clients[i]
+        if i in server.selectedIndices   # Can use store `selectedIndices` as Dict to improve efficency.
+            if round == 1
+                client.y .-= (server.η * client.λ) * (client.W - server.W)
+            else
+                a = client.a; b = client.b; r = client.r
+                θ = a*r / (a^2 + b)
+                client.z .-= (server.η * client.λ * θ) * (client.W - server.W)
+            end
         else
-            a = server.clients[idx].a; b = server.clients[idx].b; r = server.clients[idx].r
-            θ = a*r / (a^2 + b)
-            server.clients[idx].z .-= (server.η * server.clients[idx].λ * θ) * (server.clients[idx].W - server.W)
+            if round == 1
+                client.y = copy(client.v)
+            else
+                client.z = copy(client.u)
+            end
         end
     end
     return nothing
@@ -132,14 +153,23 @@ function aggregate!(server::AccFedDCDServer)
     return nothing
 end
 
+
 # Calculate objective value
-function getObjValue(server::AccFedDCDServer)
+function getObjValue(
+    server::Union{FedDCDServer, AccFedDCDServer}
+)
     objValue = 0.0
     totalNumData = 0
     for i = 1:server.num_clients
         n = size(server.clients[i].Xtrain, 1)
         totalNumData += n
-        objValue += n * getObjValue(server.clients[i])
+        objValue += n * obj( 
+            server.clients[i].Xtrain,
+            server.clients[i].Ytrain,
+            server.W,
+            server.clients[i].λ
+         )
+        # objValue += n * getObjValue(server.clients[i])
     end
     return objValue / totalNumData
 end

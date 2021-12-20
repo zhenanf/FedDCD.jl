@@ -17,7 +17,7 @@ export softmax, neg_log_loss
 export split_data, splitDataByRow, labelTransform, writeToFile
 export read_libsvm
 export fedAvgAndProx, fedDCD, accfedDCD
-export obj, accuracy, getStochasticGrad, getGradient, Hv, ComputeNewtonDirection, ComputeNewtonDirection2, SoftmaxNewtonMethod
+export obj, accuracy, getStochasticGrad, getGradient, Hv, ComputeNewtonDirection, ComputeNewtonDirection2, SoftmaxNewtonMethod, lineSearch
 export sgd!, newton!
 
 

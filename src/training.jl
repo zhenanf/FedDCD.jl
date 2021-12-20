@@ -47,6 +47,8 @@ function fedDCD(
     # Connect clients with server
     server.clients = clients
     # Training process
+    objList = zeros(Float64, 0)
+    testAccList = zeros(Float64, 0)
     startTime = time()
     @printf("Start training!\n")
     for t = 1:numRounds
@@ -59,13 +61,16 @@ function fedDCD(
         aggregate!(server)
         sendModel!(server)
         # Print log
-        objValue = obj(server.Xtest, server.Ytest, server.W, clients[1].λ)
+        # sendModelToAllClients!(server)
+        objValue = getObjValue(server)
         acc = accuracy(server.Xtest, server.Ytest, server.W)
-        @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%\n", t, objValue, acc*100)
+        @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
+        push!(objList, objValue)
+        push!(testAccList, acc)
     end
     endTime = time()
     @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
-    return server.W
+    return server.W, objList, testAccList
 end
 
 
@@ -78,6 +83,8 @@ function accfedDCD(
     # Connect clients with server
     server.clients = clients
     # Training process
+    objList = zeros(Float64, 0)
+    testAccList = zeros(Float64, 0)
     startTime = time()
     @printf("Start training!\n")
     for t = 1:numRounds
@@ -107,12 +114,14 @@ function accfedDCD(
         aggregate!(server)
         sendModel!(server, 2)
         # Print log
-        objValue = obj(server.Xtest, server.Ytest, server.W, clients[1].λ)
+        objValue = getObjValue(server)
         acc = accuracy(server.Xtest, server.Ytest, server.W)
-        @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%\n", t, objValue, acc*100)
+        @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
+        push!(objList, objValue)
+        push!(testAccList, acc)
     end
     endTime = time()
     @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
-    return server.W
+    return server.W, objList, testAccList
 end
 
