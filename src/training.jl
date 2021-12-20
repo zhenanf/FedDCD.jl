@@ -114,7 +114,8 @@ end
 function accfedDCD(
     server::AccFedDCDServer,
     clients::Vector{AccFedDCDClient},
-    numRounds::Int64
+    numRounds::Int64;
+    objMin::Float64 = 0.0
 )
     # Connect clients with server
     server.clients = clients
@@ -124,26 +125,26 @@ function accfedDCD(
     startTime = time()
     @printf("Start training!\n")
     for t = 1:numRounds
-        @printf("Round %d\n", t)
+        # @printf("Round %d\n", t)
         # update v
-        for client in server.clients
+        Threads.@threads for client in server.clients
             updatev!(client)
         end
         # first inner round
         select!(server)
-        for idx in server.selectedIndices
+        Threads.@threads for idx in server.selectedIndices
             client = server.clients[idx]
             updateW!(client)
         end
         aggregate!(server)
         sendModel!(server, 1)
         # update u
-        for client in server.clients
+        Threads.@threads for client in server.clients
             updateu!(client)
         end
         # second inner round
         select!(server)
-        for idx in server.selectedIndices
+        Threads.@threads for idx in server.selectedIndices
             client = server.clients[idx]
             updateW!(client)
         end
@@ -155,6 +156,9 @@ function accfedDCD(
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
         push!(objList, objValue)
         push!(testAccList, acc)
+        if objValue < objMin
+            break
+        end
     end
     endTime = time()
     @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)

@@ -120,7 +120,7 @@ function TestAccFedDCD(
     server = AccFedDCDServer(Xtrain, Ytrain, serverConfig)
 
     # Train
-    W, objList, testAccList = accfedDCD(server, clients, numRounds)
+    W, objList, testAccList = accfedDCD(server, clients, numRounds, objMin = 0.0)
 
     writeToFile(
         "mnist",

@@ -17,7 +17,8 @@ function newton!(X::SparseMatrixCSC{Float64, Int64}, Xt::SparseMatrixCSC{Float64
             break
         end
         D = ComputeNewtonDirection2( X, Xt, Y, W, λ, g)
-        η = lineSearch(X, Y, D, W, g, λ)
+        # η = lineSearch(X, Y, D, W, g, λ)
+        η = 1.0
         W .-= η*D
         if t == T
             @warn("Reached maximum iteration in Newton's method.")
