@@ -85,7 +85,7 @@ function TestNewtonMethod()
     @show(size(X))
     @show(size(Xtest))
     W = zeros(Float64, d, K)
-    λ = 1e-5
+    λ = 1e-4
 
     maxIter = 20
     tol = 1e-4
@@ -103,8 +103,9 @@ function TestNewtonMethod()
         end
         # Compute Newton direction.
         D = ComputeNewtonDirection2( X, Xt, Y, W, λ, g)
-        # Use stepsize 1.
-        W -=  D
+        # Line-search
+        η = lineSearch(X, Y, D, W, g, λ)
+        W .-= η*D
     end
     
 end
