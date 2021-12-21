@@ -88,9 +88,9 @@ function fedDCD(
     startTime = time()
     @printf("Start training!\n")
     for t = 1:numRounds
-        @printf("Round %d\n", t)
+        # @printf("Round %d\n", t)
         select!(server)
-        for idx in server.selectedIndices
+        Threads.@threads for idx in server.selectedIndices
             client = server.clients[idx]
             update!(client)
         end

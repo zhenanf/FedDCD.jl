@@ -63,7 +63,7 @@ function TestFedDCD(
         clientConfig,
         objList,
         testAccList,
-        "results/FedDCDv2_logReg_lambda1e-3.csv"    # file stored.
+        "results/FedDCD_logReg_lambda1e-3.csv"    # file stored.
     )
 
     @printf("Test finished!\n")
