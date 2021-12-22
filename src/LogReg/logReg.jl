@@ -289,7 +289,7 @@ function FastHv(
     ret ./= n
     ret += λ.*V
     t2 = time()
-    @printf("Time for FastHv: %4.4f\n", t2 -t1)
+    # @printf("Time for FastHv: %4.4f\n", t2 -t1)
     return ret
 end
 
@@ -345,7 +345,7 @@ function ComputeNewtonDirection2(
     
     H = LinearMap(v->vec(FastHv(X, Xt, W, λ, reshape(v,d,K))), d*K, issymmetric=true, isposdef=true)
     # H = LinearMap(v->FastHv(X, Xt, W, λ, v), issymmetric=true, isposdef=true)
-    D = cg(H, vec(g), abstol=1e-8, reltol=1e-6, maxiter=1000)
+    D = cg(H, vec(g), abstol=1e-8, reltol=1e-4, maxiter=1000)
 
     return reshape(D, d, K)
 end

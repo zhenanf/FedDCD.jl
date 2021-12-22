@@ -139,8 +139,8 @@ end
 function TestNewtonMethod()
     # fileTrain = "data/mnist.scale"
     # fileTest = "data/mnist.scale.t"
-    fileTrain = "data/rcv1_train.multiclass"
-    fileTest = "data/rcv1_train.multiclass"
+    fileTrain = "data/covtype.scale01"
+    fileTest = "data/covtype.scale01"
     X, Y = read_libsvm(fileTrain);
     Xtest, Ytest = read_libsvm(fileTest)
     Xt = copy(X')
@@ -152,7 +152,7 @@ function TestNewtonMethod()
     @show(size(X))
     @show(size(Xtest))
     W = zeros(Float64, d, K)
-    λ = 1e-4
+    λ = 1e-2
 
     maxIter = 20
     tol = 1e-6
