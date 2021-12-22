@@ -89,7 +89,7 @@ mutable struct FedDCDServerNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float6
         η = config["learning_rate"]
         τ = floor(Int64, num_clients * participation_rate)
         XtestT = copy(Xtest')
-        Ytest = Flux.onehotbatch(Ytest, 0:(num_classes-1))
+        Ytest = Flux.onehotbatch(Ytest, 1:num_classes)
         clients = Vector{FedDCDClientNN}(undef, num_clients)
         selectedIndices = zeros(Int64, τ)
         new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Vector{Int64}, Vector{FedDCDClientNN}, Flux.Chain, Flux.OneHotArray}(Xtest, XtestT, Ytest, num_classes, num_clients, participation_rate, clients, model, τ, selectedIndices, η)
@@ -112,8 +112,8 @@ function sendModel!(
     Threads.@threads for i = 1:server.τ
         idx = server.selectedIndices[i]
         c = server.clients[idx]
-        for i = 1:length(c.y)
-            c.y[i] .-= server.η * ( params(c.W)[i] - params(server.W)[i] )
+        for j = 1:length(c.y)
+            c.y[j] .-= server.η * ( params(c.W)[j] - params(server.W)[j] )
         end
     end
     return nothing
@@ -136,13 +136,13 @@ function aggregate!(
     # Take the average of the selected clients' model
     l = length(params(server.W))
     for j = 1:l
-        fill!(params(server.W)[i], 0.0)
+        fill!(params(server.W)[j], 0.0)
     end
     for i = 1:server.τ
         idx = server.selectedIndices[i]
         c = server.clients[idx]
         for j = 1:l
-            params(server.W)[i] .+= (1/server.τ) * params(c.W)[i]
+            params(server.W)[j] .+= (1/server.τ) * params(c.W)[j]
         end
     end
     return nothing

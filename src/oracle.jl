@@ -81,7 +81,7 @@ end
 
 # run adam to obtain an exact/ineact dual gradient
 function adam!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.Chain, y::Zygote.Params; num_epoches::Int64=10)
-    data = DataLoader((Xt, Y), batchsize=5, shuffle=true)
+    data = Flux.Data.DataLoader((Xt, Y), batchsize=5, shuffle=true)
     loss(x, l) = Flux.crossentropy(W(x), l) - dot_product(W, y)
     opt = ADAM()
     Flux.Optimise.@epochs num_epoches Flux.train!(loss, params(W), data, opt)

@@ -76,8 +76,41 @@ end
 
 # Implementation of the FedDCD algorithm (both exact and inexact)
 function fedDCD(
-    server::Union{FedDCDServer,FedDCDServerNN},
-    clients::Vector{Union{FedDCDClient,FedDCDClientNN}},
+    server::FedDCDServer,
+    clients::Vector{FedDCDClient},
+    numRounds::Int64
+)
+    # Connect clients with server
+    server.clients = clients
+    # Training process
+    objList = zeros(Float64, 0)
+    testAccList = zeros(Float64, 0)
+    startTime = time()
+    @printf("Start training!\n")
+    for t = 1:numRounds
+        # @printf("Round %d\n", t)
+        select!(server)
+        Threads.@threads for idx in server.selectedIndices
+            client = server.clients[idx]
+            update!(client)
+        end
+        aggregate!(server)
+        sendModel!(server)
+        # Print log
+        objValue = getObjValue(server)
+        acc = accuracy(server.XtestT, server.Ytest, server.W)
+        @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
+        push!(objList, objValue)
+        push!(testAccList, acc)
+    end
+    endTime = time()
+    @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
+    return server.W, objList, testAccList
+end
+
+function fedDCD(
+    server::FedDCDServerNN,
+    clients::Vector{FedDCDClientNN},
     numRounds::Int64
 )
     # Connect clients with server

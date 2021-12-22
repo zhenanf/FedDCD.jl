@@ -49,7 +49,7 @@ mutable struct FedDCDClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float6
     function FedDCDClientNN(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, model::Flux.Chain, config::Dict{String, Real}, oracle!::Function)
         numClasses = config["num_classes"]
         η = config["learning_rate"]
-        Ytrain = Flux.onehotbatch(Ytrain, 0:(numClasses-1))
+        Ytrain = Flux.onehotbatch(Ytrain, 1:numClasses)
         y = copy(params(model))
         XtrainT = copy(Xtrain')
         new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Zygote.Params, Flux.OneHotArray, Function, Flux.Chain}(id, Xtrain, XtrainT, Ytrain, model, y, η, oracle!)

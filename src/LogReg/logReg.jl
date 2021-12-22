@@ -161,7 +161,7 @@ end
 
 function accuracy(
     Xt::SparseMatrixCSC{Float64, Int64},
-    Y::Vector{Int64},
+    Y::Flux.OneHotArray,
     W::Flux.Chain,
 )
     acc(x,y) = 1.0* ( Flux.onecold(W(x)) == Flux.onecold(y) )
@@ -405,8 +405,8 @@ end
 # dot product of Zygote params
 function dot_product(W::Flux.Chain, y::Zygote.Params)
     out = 0.0
-    for i in 1:length(y)
-        out += dot(params(W)[i], y[i])
+    for j in 1:length(y)
+        out += dot(params(W)[j], y[j])
     end
     return out
 end

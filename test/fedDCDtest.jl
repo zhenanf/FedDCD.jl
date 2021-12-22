@@ -2,6 +2,8 @@ using Printf
 using LinearAlgebra
 using SparseArrays
 using Random
+using Flux
+
 # Testing FedDCD
 # TestFedDCD("data/mnist.scale", "data/mnist.scale.t")
 # TestFedDCD("data/rcv1_train.multiclass", "data/rcv1_train.multiclass")
@@ -170,18 +172,18 @@ function TestFedDCDNN(
         "num_clients" => numClients,
         "participation_rate" => 0.3,
         "learning_rate" => 0.99,
-    )
-
-    # neural net model
-    model = Chain( Dense(780, 32, relu), Dense(32, 10), NNlib.softmax);
+    )    
 
     # Construct clients
     clients = Vector{FedDCDClientNN}(undef, numClients)
     for i = 1:numClients
-        clients[i] = FedDCDClientNN(i, Xsplit[i], Ysplit[i], copy(model), clientConfig, adam!)
+        model = Chain( Dense(780, 32, relu), Dense(32, 10), NNlib.softmax);
+        clients[i] = FedDCDClientNN(i, Xsplit[i], Ysplit[i], model, clientConfig, adam!)
     end
+
     # Construct server
-    server = FedDCDServerNN(Xtest, Ytest, copy(model), serverConfig)
+    model = Chain( Dense(780, 32, relu), Dense(32, 10), NNlib.softmax)
+    server = FedDCDServerNN(Xtest, Ytest, model, serverConfig)
 
     # Train
     W, objList, testAccList = fedDCD(server, clients, numRounds)
