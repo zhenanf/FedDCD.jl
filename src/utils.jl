@@ -106,6 +106,45 @@ function splitDataByRow(Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{
     return Xtrain_split, Ytrain_split
 end
 
+# Split data by class
+function splitDataByClass(Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, num_clients::Int64, num_classes::Int64)
+    XT = copy(Xtrain')
+    Xtrain_split = Vector{ SparseMatrixCSC{Float64, Int64} }(undef, num_clients)
+    Ytrain_split = Vector{ Vector{Int64} }(undef, num_clients)
+    # assign 2 classes to each client 
+    classes_clients = Vector{Tuple{Int64, Int64}}(undef, num_clients)
+    num_per_class = zeros(Int64, num_classes)
+    for i in 1:num_clients
+        a = samplepair(collect(0:num_classes-1))
+        classes_clients[i] = a
+        num_per_class[a[1]+1] += 1
+        num_per_class[a[2]+1] += 1
+    end
+    # divide data via classes 
+    D = Dict{Int64, Vector{Int64}}()
+    for i in 0:(num_classes-1)
+        D[i] = findall(x->(x==i), Ytrain)
+    end
+    Δ = zeros(Int64, num_classes)
+    for i in 1:num_classes
+        Δ[i] = div( length(D[i-1]), num_per_class[i])
+    end
+    # divide data
+    idx = ones(Int64, num_classes)
+    for i in 1:num_clients
+        c1 = classes_clients[i][1]
+        indices1 = D[c1][idx[c1+1]: idx[c1+1]+Δ[c1+1]-1]
+        idx[c1+1] += Δ[c1+1]
+        c2 = classes_clients[i][2]
+        indices2 = D[c2][idx[c2+1]: idx[c2+1]+Δ[c2+1]-1]
+        idx[c2+1] += Δ[c2+1]
+        ids = vcat(indices1, indices2)
+        Xtrain_split[i] = copy( XT[:,ids]' )
+        Ytrain_split[i] = Ytrain[ids]
+    end
+    return Xtrain_split, Ytrain_split
+end
+
 # read data from libsvm
 function read_libsvm(filename::String)
     numLine = 0
