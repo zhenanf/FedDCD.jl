@@ -64,11 +64,7 @@ function TestFedDCD(
         clientConfig,
         objList,
         testAccList,
-<<<<<<< HEAD
         "results/FedDCD_logReg_RCV1_lambda1e-4.csv"    # file stored.
-=======
-        "results/FedDCD_logReg_lambda1e-3.csv"    # file stored.
->>>>>>> bc30a2cf88bf3a7f0c5bed140814fbc33f582767
     )
 
     @printf("Test finished!\n")
