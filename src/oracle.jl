@@ -12,13 +12,16 @@ function newton!(X::SparseMatrixCSC{Float64, Int64}, Xt::SparseMatrixCSC{Float64
     for t = 1:T
         g = getGradient(X, Xt, Y, W, λ) - y
         gnorm = norm(g)
-        # @printf("   gnorm: %4.4e\n", gnorm)
+        @printf("   gnorm: %4.4e\n", gnorm)
         if gnorm < tol
             break
         end
+        t1 = time()
         D = ComputeNewtonDirection2( X, Xt, Y, W, λ, g)
-        # η = lineSearch(X, Y, D, W, g, λ)
-        η = 1.0
+        t2 = time()
+        @printf("Time spent on computing Newton direction: %4.4f\n", t2 - t1)
+        η = lineSearch2(X, Y, y, D, W, g, λ)
+        # η = 1.0
         W .-= η*D
         if t == T
             @warn("Reached maximum iteration in Newton's method.")

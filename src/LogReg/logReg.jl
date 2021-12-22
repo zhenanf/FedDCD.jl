@@ -32,6 +32,7 @@ function lineSearch(
 )
     maxLineSearchSteps = 100
     GTD = dot(G, D)
+    # @show(GTD)
     Wnorm = norm(W)
     XW = X*W
     XD = X*D
@@ -60,7 +61,64 @@ function lineSearch(
         end
         objNew /= n
         objNew += λ/2*norm(Wnew)^2
-        if objNew - objval > β*η*GTD
+        if objNew > objval - β*η*GTD
+            η *= 0.5
+        else
+            break
+        end
+        if t == maxLineSearchSteps
+            @warn("Reached maximum linesearch steps.")
+        end
+    end
+    return η
+end
+
+# Line-search for FedDCD
+function lineSearch2(
+    X::SparseMatrixCSC{Float64, Int64},
+    Y::Vector{Int64},
+    y::Matrix{Float64},  # dual variable
+    D::Matrix{Float64},
+    W::Matrix{Float64},
+    G::Matrix{Float64},
+    λ::Float64
+)
+    maxLineSearchSteps = 100
+    GTD = dot(G, D)
+    # @show(GTD)
+    Wnorm = norm(W)
+    XW = X*W
+    XD = X*D
+    WTy = dot(W, y)
+    DTy = dot(D, y)
+    
+    n = size(X, 1)
+    objval = 0.0
+    @inbounds for i = 1:n
+        prob = softmax(XW[i,:])
+        objval += -log(prob[ Y[i] ])
+    end
+    objval /= n
+    objval -= WTy   # objective have an additional term -W^Ty
+    objval += λ/2*Wnorm^2
+    
+    Wnew = zeros(Float64, size(W))
+    XWnew = zeros(Float64, size(XW))
+
+    η = 1.0
+    β = 1e-2
+    for t = 1:maxLineSearchSteps
+        Wnew .= W - η*D
+        XWnew .= XW - η*XD
+        objNew = 0.0
+        @inbounds for i = 1:n
+            prob = softmax(XWnew[i,:])
+            objNew += -log(prob[ Y[i] ])
+        end
+        objNew /= n
+        objNew -= ( WTy - η*DTy )
+        objNew += λ/2*norm(Wnew)^2
+        if objNew > objval - β*η*GTD
             η *= 0.5
         else
             break
@@ -203,6 +261,7 @@ function FastHv(
     λ::Float64,
     V::Matrix{Float64}
 )
+    t1 = time()
     # Time complexity is O( nnz(X)*K )
     n, d = size(X)
     _, K = size(W)
@@ -229,6 +288,8 @@ function FastHv(
     end
     ret ./= n
     ret += λ.*V
+    t2 = time()
+    @printf("Time for FastHv: %4.4f\n", t2 -t1)
     return ret
 end
 
@@ -283,7 +344,8 @@ function ComputeNewtonDirection2(
     _, K = size(W)
     
     H = LinearMap(v->vec(FastHv(X, Xt, W, λ, reshape(v,d,K))), d*K, issymmetric=true, isposdef=true)
-    D = cg(H, vec(g), abstol=1e-8, reltol=1e-4, maxiter=100)
+    # H = LinearMap(v->FastHv(X, Xt, W, λ, v), issymmetric=true, isposdef=true)
+    D = cg(H, vec(g), abstol=1e-8, reltol=1e-6, maxiter=1000)
 
     return reshape(D, d, K)
 end

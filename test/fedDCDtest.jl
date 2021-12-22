@@ -4,13 +4,14 @@ using SparseArrays
 using Random
 # Testing FedDCD
 # TestFedDCD("data/mnist.scale", "data/mnist.scale.t")
+# TestFedDCD("data/rcv1_train.multiclass", "data/rcv1_train.multiclass")
 function TestFedDCD(
     fileTrain::String,
     fileTest::String
     # participationRate::Float64,
     # lambda::Float64
     )
-    numClients = 100
+    numClients = 10
     numRounds = 100
     # Read data
     # filename = "data/rcv1_train.binary"
@@ -32,7 +33,7 @@ function TestFedDCD(
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-3,
+        "lambda" => 1e-4,
         "mu" => 0,
         "learning_rate" => 1e-3,
         "participation_rate" => 0.3,
@@ -57,13 +58,13 @@ function TestFedDCD(
     W, objList, testAccList = fedDCD(server, clients, numRounds)
 
     writeToFile(
-        "mnist",
+        "rcv1",
         "softmax classification",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
-        "results/FedDCDv2_logReg_lambda1e-3.csv"    # file stored.
+        "results/FedDCD_logReg_RCV1_lambda1e-4.csv"    # file stored.
     )
 
     @printf("Test finished!\n")
