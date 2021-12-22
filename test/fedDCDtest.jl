@@ -136,3 +136,65 @@ function TestAccFedDCD(
 
     @printf("Test finished!\n")
 end
+
+# TestFedDCDNN("data/mnist.scale", "data/mnist.scale.t")
+function TestFedDCDNN(
+    fileTrain::String,
+    fileTest::String
+    )
+    numClients = 10
+    numRounds = 100
+    # Read data
+    Xtrain, Ytrain = read_libsvm(fileTrain)
+    Xtest, Ytest = read_libsvm(fileTest)
+    Ytrain, Ytest = labelTransform(Ytrain, Ytest)
+    # Set Xtrain and Xtest same number of feature
+    Itr, Jtr, Vtr = findnz(Xtrain)
+    Ite, Jte, Vte = findnz(Xtest)
+    d = max( size(Xtrain, 2), size(Xtest, 2) )
+    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d)
+    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d)
+    
+    numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
+    # Split data
+    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)     
+
+    # Setup config, running FedAvg if mu=0.
+    clientConfig = Dict(
+        "num_classes" => numClasses,
+        "learning_rate" => 1e-3,
+    )
+
+    serverConfig = Dict(
+        "num_classes" => numClasses,
+        "num_clients" => numClients,
+        "participation_rate" => 0.3,
+        "learning_rate" => 0.99,
+    )
+
+    # neural net model
+    model = Chain( Dense(780, 32, relu), Dense(32, 10), NNlib.softmax);
+
+    # Construct clients
+    clients = Vector{FedDCDClientNN}(undef, numClients)
+    for i = 1:numClients
+        clients[i] = FedDCDClientNN(i, Xsplit[i], Ysplit[i], copy(model), clientConfig, adam!)
+    end
+    # Construct server
+    server = FedDCDServerNN(Xtest, Ytest, copy(model), serverConfig)
+
+    # Train
+    W, objList, testAccList = fedDCD(server, clients, numRounds)
+
+    writeToFile(
+        "rcv1",
+        "softmax classification",
+        serverConfig,
+        clientConfig,
+        objList,
+        testAccList,
+        "results/FedDCD_logReg_lambda1e-3.csv"
+    )
+
+    @printf("Test finished!\n")
+end

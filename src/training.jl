@@ -76,8 +76,8 @@ end
 
 # Implementation of the FedDCD algorithm (both exact and inexact)
 function fedDCD(
-    server::FedDCDServer,
-    clients::Vector{FedDCDClient},
+    server::Union{FedDCDServer,FedDCDServerNN},
+    clients::Vector{Union{FedDCDClient,FedDCDClientNN}},
     numRounds::Int64
 )
     # Connect clients with server
@@ -97,9 +97,8 @@ function fedDCD(
         aggregate!(server)
         sendModel!(server)
         # Print log
-        # sendModelToAllClients!(server)
         objValue = getObjValue(server)
-        acc = accuracy(server.Xtest, server.Ytest, server.W)
+        acc = accuracy(server.XtestT, server.Ytest, server.W)
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
         push!(objList, objValue)
         push!(testAccList, acc)

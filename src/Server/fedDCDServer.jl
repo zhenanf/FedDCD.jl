@@ -69,6 +69,84 @@ function aggregate!(
     return nothing
 end
 
+########################################################################################################
+mutable struct FedDCDServerNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Vector{Int64}, T5<:Vector{FedDCDClientNN}, T6<:Flux.Chain, T7<:Flux.OneHotArray} <:AbstractServer
+    Xtest::T3                       # testing data
+    XtestT::T3                      # copy of transpose
+    Ytest::T7                       # testing label
+    num_classes::T1                 # number of classes
+    num_clients::T1                 # number of clients
+    participation_rate::T2          # participation rate
+    clients::T5                     # set of clients
+    W::T6                           # aggregation of uploaded model updates
+    τ::T1                           # number of particiating clients
+    selectedIndices::T4             # selected clients
+    η::T2                           # learning rate                    
+    function FedDCDServerNN(Xtest::SparseMatrixCSC{Float64, Int64}, Ytest::Vector{Int64}, model::Flux.Chain, config::Dict{String, Real})
+        num_classes = config["num_classes"]
+        num_clients = config["num_clients"]
+        participation_rate = config["participation_rate"]
+        η = config["learning_rate"]
+        τ = floor(Int64, num_clients * participation_rate)
+        XtestT = copy(Xtest')
+        Ytest = Flux.onehotbatch(Ytest, 0:(num_classes-1))
+        clients = Vector{FedDCDClientNN}(undef, num_clients)
+        selectedIndices = zeros(Int64, τ)
+        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Vector{Int64}, Vector{FedDCDClientNN}, Flux.Chain, Flux.OneHotArray}(Xtest, XtestT, Ytest, num_classes, num_clients, participation_rate, clients, model, τ, selectedIndices, η)
+    end
+end
+
+# Select clients
+function select!(
+    server::FedDCDServerNN
+    )
+    server.selectedIndices .= randperm(server.num_clients)[1:server.τ]
+    return nothing
+end
+
+# Send global model
+function sendModel!(
+    server::FedDCDServerNN
+)
+    # Only send model to selected clients
+    Threads.@threads for i = 1:server.τ
+        idx = server.selectedIndices[i]
+        c = server.clients[idx]
+        for i = 1:length(c.y)
+            c.y[i] .-= server.η * ( params(c.W)[i] - params(server.W)[i] )
+        end
+    end
+    return nothing
+end
+
+# Send global model to all clients
+function sendModelToAllClients!(
+    server::FedDCDServerNN
+)
+    for client in server.clients
+        client.W = copy(server.W)
+    end
+    return nothing
+end
+
+# Aggregation
+function aggregate!(
+    server::FedDCDServerNN
+)
+    # Take the average of the selected clients' model
+    l = length(params(server.W))
+    for j = 1:l
+        fill!(params(server.W)[i], 0.0)
+    end
+    for i = 1:server.τ
+        idx = server.selectedIndices[i]
+        c = server.clients[idx]
+        for j = 1:l
+            params(server.W)[i] .+= (1/server.τ) * params(c.W)[i]
+        end
+    end
+    return nothing
+end
 
 ########################################################################################################
 mutable struct AccFedDCDServer{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Vector{Int64}, T5<:Vector{AccFedDCDClient}, T6<:Matrix{Float64}} <:AbstractServer
@@ -170,6 +248,21 @@ function getObjValue(
             server.clients[i].λ
          )
         # objValue += n * getObjValue(server.clients[i])
+    end
+    return objValue / totalNumData
+end
+
+# Calculate objective value
+function getObjValue(
+    server::FedDCDServerNN
+)
+    objValue = 0.0
+    totalNumData = 0
+    for i = 1:server.num_clients
+        c = server.clients[i]
+        n = size(c.Xtrain, 1)
+        totalNumData += n
+        objValue += n * obj( c.XtrainT, c.Ytrain, server.W)
     end
     return objValue / totalNumData
 end

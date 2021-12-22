@@ -36,6 +36,35 @@ function getObjValue(
     return objValue
 end
 
+########################################################################################################
+mutable struct FedDCDClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Zygote.Params, T5<:Flux.OneHotArray, T6<:Function, T7<:Flux.Chain} <: AbstractClient
+    id::T1                                  # client index
+    Xtrain::T3                              # training data
+    XtrainT::T3                             # Row copy
+    Ytrain::T5                              # training label
+    W::T7                                   # (model) primal variable
+    y::T4                                   # (model) dual variable
+    η::T2                                   # learning rate
+    oracle!::T6                             # gradient oracle
+    function FedDCDClientNN(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, model::Flux.Chain, config::Dict{String, Real}, oracle!::Function)
+        numClasses = config["num_classes"]
+        η = config["learning_rate"]
+        Ytrain = Flux.onehotbatch(Ytrain, 0:(numClasses-1))
+        y = copy(params(model))
+        XtrainT = copy(Xtrain')
+        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Zygote.Params, Flux.OneHotArray, Function, Flux.Chain}(id, Xtrain, XtrainT, Ytrain, model, y, η, oracle!)
+    end
+end
+
+# Model update on local device
+function update!(
+    client::FedDCDClientNN
+)
+    @printf("Client %d locally update\n", client.id)
+    client.oracle!(client.XtrainT, client.Ytrain, client.W, client.y)
+end
+
+
 
 ########################################################################################################
 mutable struct AccFedDCDClient{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Matrix{Float64}, T5<:Vector{Int64}, T6<:Function} <: AbstractClient

@@ -21,6 +21,16 @@ function obj(
     return objval
 end
 
+# Calculate the objective of neural network model:
+function obj(
+    Xt::SparseMatrixCSC{Float64, Int64},
+    Y::Flux.OneHotArray,
+    W::Flux.Chain,
+)
+    loss(x,y) = Flux.Losses.crossentropy(W(x), y);
+    return loss(Xt, Y)
+end
+
 # Line-search for softmax
 function lineSearch(
     X::SparseMatrixCSC{Float64, Int64},
@@ -147,6 +157,20 @@ function accuracy(
         end
     end
     return ret/n
+end
+
+function accuracy(
+    Xt::SparseMatrixCSC{Float64, Int64},
+    Y::Vector{Int64},
+    W::Flux.Chain,
+)
+    acc(x,y) = 1.0* ( Flux.onecold(W(x)) == Flux.onecold(y) )
+    num_data = size(Xt, 2)
+    out = 0.0
+    for i = 1:num_data
+        out += acc(Xt[:,i], Y[:,i])
+    end
+    return out/num_data
 end
 
 
@@ -376,4 +400,13 @@ function SoftmaxNewtonMethod(
         W .-= η*D
     end
     return W
+end
+
+# dot product of Zygote params
+function dot_product(W::Flux.Chain, y::Zygote.Params)
+    out = 0.0
+    for i in 1:length(y)
+        out += dot(params(W)[i], y[i])
+    end
+    return out
 end
