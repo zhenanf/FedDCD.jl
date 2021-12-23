@@ -80,9 +80,15 @@ function sgd!(X::SparseMatrixCSC{Float64, Int64}, Xt::SparseMatrixCSC{Float64, I
 end
 
 # run adam to obtain an exact/ineact dual gradient
-function adam!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.Chain, y::Zygote.Params; num_epoches::Int64=10)
-    data = Flux.Data.DataLoader((Xt, Y), batchsize=5, shuffle=true)
-    loss(x, l) = Flux.crossentropy(W(x), l) - dot_product(W, y)
-    opt = ADAM()
-    Flux.Optimise.@epochs num_epoches Flux.train!(loss, params(W), data, opt)
+function adam!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.Chain, y::Zygote.Params; num_epoches::Int64=200)
+    data = Flux.Data.DataLoader((Xt, Y), batchsize=128, shuffle=true)
+    sqnorm(w) = sum(abs2, w)
+    loss(x, l) = Flux.crossentropy(W(x), l) + 5e-3 * sum(sqnorm, params(W)) - dot(params(W), y) 
+    # opt = ADAMW(0.001, (0.89, 0.995), 1e-2)
+    # opt = ADAM()
+    opt = Flux.Optimise.Optimiser(ADAM(), Flux.Optimise.ExpDecay())
+    # Flux.Optimise.@epochs num_epoches Flux.train!(loss, params(W), data, opt, cb = () -> @printf("loss = %.2f\n", loss(Xt, Y)))
+    for _ = 1:num_epoches
+        Flux.train!(loss, params(W), data, opt)
+    end
 end

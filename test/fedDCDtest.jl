@@ -145,7 +145,7 @@ function TestFedDCDNN(
     fileTest::String
     )
     numClients = 10
-    numRounds = 100
+    numRounds = 20
     # Read data
     Xtrain, Ytrain = read_libsvm(fileTrain)
     Xtest, Ytest = read_libsvm(fileTest)
@@ -171,18 +171,20 @@ function TestFedDCDNN(
         "num_classes" => numClasses,
         "num_clients" => numClients,
         "participation_rate" => 0.3,
-        "learning_rate" => 0.99,
+        "learning_rate" => 1e-2,
     )    
 
     # Construct clients
     clients = Vector{FedDCDClientNN}(undef, numClients)
     for i = 1:numClients
-        model = Chain( Dense(780, 32, relu), Dense(32, 10), NNlib.softmax);
+        # model = Chain( Dense(780, 32, relu), Dense(32, 10), NNlib.softmax);
+        model = Chain( Dense(780, 10), NNlib.softmax)
         clients[i] = FedDCDClientNN(i, Xsplit[i], Ysplit[i], model, clientConfig, adam!)
     end
 
     # Construct server
-    model = Chain( Dense(780, 32, relu), Dense(32, 10), NNlib.softmax)
+    # model = Chain( Dense(780, 32, relu), Dense(32, 10), NNlib.softmax)
+    model = Chain( Dense(780, 10), NNlib.softmax)
     server = FedDCDServerNN(Xtest, Ytest, model, serverConfig)
 
     # Train

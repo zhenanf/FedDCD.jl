@@ -27,8 +27,14 @@ function obj(
     Y::Flux.OneHotArray,
     W::Flux.Chain,
 )
-    loss(x,y) = Flux.Losses.crossentropy(W(x), y);
-    return loss(Xt, Y)
+    loss(x,y) = Flux.Losses.crossentropy(W(x), y)
+    l = 0.0
+    num_data = size(Xt, 2)
+    for i = 1:num_data
+        l += loss(Xt[:,i], Y[:,i])
+    end
+    sqnorm(w) = sum(abs2, w)
+    return l/num_data + 5e-3 * sum(sqnorm, params(W))
 end
 
 # Line-search for softmax
