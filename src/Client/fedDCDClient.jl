@@ -44,19 +44,19 @@ mutable struct FedDCDClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float6
     Ytrain::T5                              # training label
     W::T7                                   # (model) primal variable
     y::T4                                   # (model) dual variable
-    η::T2                                   # learning rate
+    λ::T2                                   # regularization parameter
     oracle!::T6                             # gradient oracle
-    function FedDCDClientNN(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, model::Flux.Chain, config::Dict{String, Real}, oracle!::Function)
+    function FedDCDClientNN(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, dim::Int64, config::Dict{String, Real}, oracle!::Function)
         numClasses = config["num_classes"]
-        η = config["learning_rate"]
+        λ = config["lambda"]
         Ytrain = Flux.onehotbatch(Ytrain, 1:numClasses)
-        y = copy(params(model))
+        W = Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)
+        y = params(Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)) # ugly, but copy will cause bug
         for j = 1:length(y)
-            fill!(params(model)[j], 0.0)
             fill!(y[j], 0.0)
         end
         XtrainT = copy(Xtrain')
-        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Zygote.Params, Flux.OneHotArray, Function, Flux.Chain}(id, Xtrain, XtrainT, Ytrain, model, y, η, oracle!)
+        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Zygote.Params, Flux.OneHotArray, Function, Flux.Chain}(id, Xtrain, XtrainT, Ytrain, W, y, λ, oracle!)
     end
 end
 
@@ -65,7 +65,7 @@ function update!(
     client::FedDCDClientNN
 )
     @printf("Client %d locally update\n", client.id)
-    client.oracle!(client.XtrainT, client.Ytrain, client.W, client.y)
+    client.oracle!(client.XtrainT, client.Ytrain, client.W, client.y, client.λ)
 end
 
 

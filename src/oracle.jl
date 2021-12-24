@@ -1,6 +1,7 @@
 ########################################################################
 # Gradient oracles
 ########################################################################
+using Printf
 
 # run SVRG to obtain an exact/ineact dual gradient
 function svrg(X::SparseMatrixCSC{Float64, Int64}, Y::Vector{Int64}, w::Matrix{Float64}, y::Matrix{Float64})
@@ -80,15 +81,17 @@ function sgd!(X::SparseMatrixCSC{Float64, Int64}, Xt::SparseMatrixCSC{Float64, I
 end
 
 # run adam to obtain an exact/ineact dual gradient
-function adam!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.Chain, y::Zygote.Params; num_epoches::Int64=200)
+function adam!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.Chain, y::Zygote.Params, λ::Float64; num_epoches::Int64=20)
+    # data
     data = Flux.Data.DataLoader((Xt, Y), batchsize=128, shuffle=true)
+    # loss
     sqnorm(w) = sum(abs2, w)
-    loss(x, l) = Flux.crossentropy(W(x), l) + 5e-3 * sum(sqnorm, params(W)) - dot(params(W), y) 
-    # opt = ADAMW(0.001, (0.89, 0.995), 1e-2)
-    # opt = ADAM()
-    opt = Flux.Optimise.Optimiser(ADAM(), Flux.Optimise.ExpDecay())
-    # Flux.Optimise.@epochs num_epoches Flux.train!(loss, params(W), data, opt, cb = () -> @printf("loss = %.2f\n", loss(Xt, Y)))
-    for _ = 1:num_epoches
+    loss(x, l) = Flux.crossentropy(W(x), l) + (λ/2) * sum(sqnorm, params(W)) - dot(params(W), y)
+    # optimizer 
+    opt = ADAMW(0.001, (0.89, 0.995), 1e-8)
+    # train
+    for t = 1:num_epoches
         Flux.train!(loss, params(W), data, opt)
+        # @printf "epoch: %d, obj: %.2f\n" t loss(Xt, Y)
     end
 end

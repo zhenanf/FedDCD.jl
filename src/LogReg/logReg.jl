@@ -26,6 +26,7 @@ function obj(
     Xt::SparseMatrixCSC{Float64, Int64},
     Y::Flux.OneHotArray,
     W::Flux.Chain,
+    λ::Float64
 )
     loss(x,y) = Flux.Losses.crossentropy(W(x), y)
     l = 0.0
@@ -34,7 +35,7 @@ function obj(
         l += loss(Xt[:,i], Y[:,i])
     end
     sqnorm(w) = sum(abs2, w)
-    return l/num_data + 5e-3 * sum(sqnorm, params(W))
+    return l/num_data + (λ/2) * sum(sqnorm, params(W))
 end
 
 # Line-search for softmax
@@ -406,13 +407,4 @@ function SoftmaxNewtonMethod(
         W .-= η*D
     end
     return W
-end
-
-# dot product of Zygote params
-function dot_product(W::Flux.Chain, y::Zygote.Params)
-    out = 0.0
-    for j in 1:length(y)
-        out += dot(params(W)[j], y[j])
-    end
-    return out
 end

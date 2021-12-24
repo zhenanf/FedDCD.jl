@@ -82,17 +82,18 @@ mutable struct FedDCDServerNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float6
     τ::T1                           # number of particiating clients
     selectedIndices::T4             # selected clients
     η::T2                           # learning rate                    
-    function FedDCDServerNN(Xtest::SparseMatrixCSC{Float64, Int64}, Ytest::Vector{Int64}, model::Flux.Chain, config::Dict{String, Real})
+    function FedDCDServerNN(Xtest::SparseMatrixCSC{Float64, Int64}, Ytest::Vector{Int64}, dim::Int64, config::Dict{String, Real})
         num_classes = config["num_classes"]
         num_clients = config["num_clients"]
         participation_rate = config["participation_rate"]
         η = config["learning_rate"]
+        W = Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)
         τ = floor(Int64, num_clients * participation_rate)
         XtestT = copy(Xtest')
         Ytest = Flux.onehotbatch(Ytest, 1:num_classes)
         clients = Vector{FedDCDClientNN}(undef, num_clients)
         selectedIndices = zeros(Int64, τ)
-        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Vector{Int64}, Vector{FedDCDClientNN}, Flux.Chain, Flux.OneHotArray}(Xtest, XtestT, Ytest, num_classes, num_clients, participation_rate, clients, model, τ, selectedIndices, η)
+        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Vector{Int64}, Vector{FedDCDClientNN}, Flux.Chain, Flux.OneHotArray}(Xtest, XtestT, Ytest, num_classes, num_clients, participation_rate, clients, W, τ, selectedIndices, η)
     end
 end
 
@@ -252,7 +253,7 @@ function getObjValue(
         c = server.clients[i]
         n = size(c.Xtrain, 1)
         totalNumData += n
-        objValue += n * obj( c.XtrainT, c.Ytrain, server.W)
+        objValue += n * obj( c.XtrainT, c.Ytrain, server.W, c.λ)
     end
     return objValue / totalNumData
 end

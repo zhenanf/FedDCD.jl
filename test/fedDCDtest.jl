@@ -139,13 +139,13 @@ function TestAccFedDCD(
     @printf("Test finished!\n")
 end
 
-# TestFedDCDNN("data/mnist.scale", "data/mnist.scale.t")
+# W = TestFedDCDNN("data/mnist.scale", "data/mnist.scale.t");
 function TestFedDCDNN(
     fileTrain::String,
     fileTest::String
     )
     numClients = 10
-    numRounds = 20
+    numRounds = 100
     # Read data
     Xtrain, Ytrain = read_libsvm(fileTrain)
     Xtest, Ytest = read_libsvm(fileTest)
@@ -164,41 +164,73 @@ function TestFedDCDNN(
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "learning_rate" => 1e-3,
+        "lambda" => 1e-2,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
         "participation_rate" => 0.3,
-        "learning_rate" => 1e-2,
-    )    
+        "learning_rate" => 1e-8,
+    )
+    
+    # model structure
+    dim = 32
 
     # Construct clients
     clients = Vector{FedDCDClientNN}(undef, numClients)
     for i = 1:numClients
-        # model = Chain( Dense(780, 32, relu), Dense(32, 10), NNlib.softmax);
-        model = Chain( Dense(780, 10), NNlib.softmax)
-        clients[i] = FedDCDClientNN(i, Xsplit[i], Ysplit[i], model, clientConfig, adam!)
+        clients[i] = FedDCDClientNN(i, Xsplit[i], Ysplit[i], dim, clientConfig, adam!)
     end
 
-    # Construct server
-    # model = Chain( Dense(780, 32, relu), Dense(32, 10), NNlib.softmax)
-    model = Chain( Dense(780, 10), NNlib.softmax)
-    server = FedDCDServerNN(Xtest, Ytest, model, serverConfig)
+    # test adam!
+    # adam!(clients[1].XtrainT, clients[1].Ytrain, clients[1].W, clients[1].y, clients[1].λ)
 
-    # Train
+    # Construct server
+    server = FedDCDServerNN(Xtest, Ytest, dim, serverConfig)
+
+    # # Train
     W, objList, testAccList = fedDCD(server, clients, numRounds)
 
-    writeToFile(
-        "rcv1",
-        "softmax classification",
-        serverConfig,
-        clientConfig,
-        objList,
-        testAccList,
-        "results/FedDCD_logReg_lambda1e-3.csv"
-    )
-
     @printf("Test finished!\n")
+    return W
+end
+
+# test neural network
+# model = TestNN("data/mnist.scale", "data/mnist.scale.t");
+function TestNN(
+    fileTrain::String,
+    fileTest::String
+    )
+    # Read data
+    Xtrain, Ytrain = read_libsvm(fileTrain)
+    Xtest, Ytest = read_libsvm(fileTest)
+    Ytrain, Ytest = labelTransform(Ytrain, Ytest)
+    # Set Xtrain and Xtest same number of feature
+    Itr, Jtr, Vtr = findnz(Xtrain)
+    Ite, Jte, Vte = findnz(Xtest)
+    d = max( size(Xtrain, 2), size(Xtest, 2) )
+    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d)
+    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d)
+    XtrainT = copy(Xtrain')
+    XtestT = copy(Xtest')
+    Ytrain = Flux.onehotbatch(Ytrain, 1:10)
+    Ytest =  Flux.onehotbatch(Ytest, 1:10)
+    # build model
+    model = Chain( Dense(780, 32, relu, bias=false), Dense(32, 10, bias=false), NNlib.softmax)
+    # data loader
+    data = Flux.Data.DataLoader((XtrainT, Ytrain), batchsize=128, shuffle=true)
+    # optimizer
+    opt = ADAMW(0.001, (0.89, 0.995), 1e-8)
+    # loss 
+    λ = 0.01
+    sqnorm(w) = sum(abs2, w)
+    loss(x, l) = Flux.crossentropy(model(x), l) + (λ/2)*sum(sqnorm, params(model)) 
+    #training 
+    num_epoches = 20
+    for t = 1:num_epoches
+        Flux.train!(loss, params(model), data, opt)
+        @printf "epoch: %d, training obj: %.2f, test accuracy: %.2f\n" t loss(XtrainT, Ytrain) accuracy(XtestT, Ytest, model)
+    end
+    return model
 end
