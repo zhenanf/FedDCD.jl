@@ -123,6 +123,7 @@ function fedDCD(
     for t = 1:numRounds
         # @printf("Round %d\n", t)
         select!(server)
+        synchronize!(server)
         Threads.@threads for idx in server.selectedIndices
             client = server.clients[idx]
             update!(client)
@@ -131,7 +132,14 @@ function fedDCD(
         sendModel!(server)
         # Print log
         objValue = getObjValue(server)
-        acc = accuracy(server.XtestT, server.Ytest, server.W)
+        acc = 0.0
+        num_data = 0
+        for c in server.clients
+            n = size(c.Xtrain, 1)
+            num_data += n
+            acc += n*accuracy(c.XtrainT, c.Ytrain, server.W)
+        end
+        acc /= num_data
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
         push!(objList, objValue)
         push!(testAccList, acc)

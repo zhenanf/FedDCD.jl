@@ -139,6 +139,16 @@ function aggregate!(
     return nothing
 end
 
+# synchronization
+function synchronize!(server::FedDCDServerNN)
+    for i in server.selectedIndices
+        c = server.clients[i]
+        for j = 1:length(params(server.W))
+            params(c.W)[j] .= params(server.W)[j]
+        end
+    end
+end
+
 ########################################################################################################
 mutable struct AccFedDCDServer{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Vector{Int64}, T5<:Vector{AccFedDCDClient}, T6<:Matrix{Float64}} <:AbstractServer
     Xtest::T3                       # testing data

@@ -171,7 +171,7 @@ function TestFedDCDNN(
         "num_classes" => numClasses,
         "num_clients" => numClients,
         "participation_rate" => 0.3,
-        "learning_rate" => 1e-8,
+        "learning_rate" => 1e-2,
     )
     
     # model structure
@@ -223,14 +223,14 @@ function TestNN(
     # optimizer
     opt = ADAMW(0.001, (0.89, 0.995), 1e-8)
     # loss 
-    λ = 0.01
+    λ = 0.0
     sqnorm(w) = sum(abs2, w)
     loss(x, l) = Flux.crossentropy(model(x), l) + (λ/2)*sum(sqnorm, params(model)) 
     #training 
     num_epoches = 20
     for t = 1:num_epoches
-        Flux.train!(loss, params(model), data, opt)
         @printf "epoch: %d, training obj: %.2f, test accuracy: %.2f\n" t loss(XtrainT, Ytrain) accuracy(XtestT, Ytest, model)
+        Flux.train!(loss, params(model), data, opt)  
     end
     return model
 end
