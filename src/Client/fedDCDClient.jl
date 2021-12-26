@@ -126,3 +126,66 @@ function updateu!(client::AccFedDCDClient)
     client.z .= copy(client.u)
 end
 
+########################################################################################################
+mutable struct AccFedDCDClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Zygote.Params, T5<:Flux.OneHotArray, T6<:Function, T7<:Flux.Chain} <: AbstractClient
+    id::T1                                  # client index
+    Xtrain::T3                              # training data
+    XtrainT::T3                             # Row copy
+    Ytrain::T5                              # training label
+    W::T7                                   # (model) primal variable
+    y::T4                                   # (model) dual variable 1
+    z::T4                                   # (model) dual variable 2
+    v::T4                                   # (model) dual variable 3
+    u::T4                                   # (model) dual variable 4
+    λ::T2                                   # regularization parameter
+    r::T2                                   # participation rate
+    κ::T2                                   # conditional number
+    a::T2                                   # hyper parameter
+    b::T2                                   # hyper parameter
+    oracle!::T6                             # gradient oracle
+    function AccFedDCDClientNN(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, dim::Int64, config::Dict{String, Real}, oracle!::Function)
+        numClasses = config["num_classes"]
+        λ = config["lambda"]
+        r = config["participation_rate"]
+        Ytrain = Flux.onehotbatch(Ytrain, 1:numClasses)
+        W = Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)
+        y = params(Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax))
+        z = params(Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax))
+        v = params(Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax))
+        u = params(Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)) 
+        for j = 1:length(y)
+            fill!(y[j], 0.0)
+            fill!(z[j], 0.0)
+            fill!(v[j], 0.0)
+            fill!(u[j], 0.0)
+        end
+        XtrainT = copy(Xtrain')
+        κ = λ
+        a = sqrt(κ) / (1/r + sqrt(κ))
+        b = a*κ*r^2
+        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Zygote.Params, Flux.OneHotArray, Function, Flux.Chain}(id, Xtrain, XtrainT, Ytrain, W, y, z, v, u, λ, r, κ, a, b, oracle!)
+    end
+end
+
+# Model updates on local device
+function updateW!(client::AccFedDCDClientNN)
+    # @printf("Client %d locally update\n", client.id)
+    client.oracle!(client.XtrainT, client.Ytrain, client.W, client.v, client.λ)
+end
+
+function updatev!(client::AccFedDCDClientNN)
+    a = client.a
+    for j = 1:length(client.v)
+        client.v[j] .= (1-a)*client.y[j] + a*client.z[j]
+        client.y[j] .= client.v[j]
+    end
+end
+
+function updateu!(client::AccFedDCDClientNN)
+    a = client.a; b = client.b
+    θ1 = a^2 / (a^2 + b); θ2 = b / (a^2 + b)
+    for j = 1:length(client.u)
+        client.u[j] .= θ1*client.z[j] + θ2*client.v[j]
+        client.z[j] .= client.u[j]
+    end
+end
