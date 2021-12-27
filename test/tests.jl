@@ -248,3 +248,73 @@ function TestFedAvgAndProxNN(
 
     @printf("Test finished!\n")
 end
+
+
+# Test function for Scaffold with neural networks
+# TestScaffoldNN("data/mnist.scale", "data/mnist.scale.t")
+function TestScaffoldNN(
+    fileTrain::String,
+    fileTest::String
+    # participationRate::Float64,
+    # lambda::Float64
+    )
+    numClients = 10
+    numRounds = 100
+    # Read data
+    # filename = "data/rcv1_train.binary"
+    # filename = "data/mnist.scale"
+    Xtrain, Ytrain = read_libsvm(fileTrain)
+    Xtest, Ytest = read_libsvm(fileTest)
+    Ytrain, Ytest = labelTransform(Ytrain, Ytest)
+    # Set Xtrain and Xtest same number of feature
+    Itr, Jtr, Vtr = findnz(Xtrain)
+    Ite, Jte, Vte = findnz(Xtest)
+    d = max( size(Xtrain, 2), size(Xtest, 2) )
+    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d)
+    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d)
+    
+    numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
+    # Split data
+    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)    
+
+    # Setup config, running FedAvg if mu=0.
+    clientConfig = Dict(
+        "num_classes" => numClasses,
+        "lambda" => 1e-2,
+        "learning_rate" => 1e-2,
+        "numLocalEpochs" => 20,
+    )
+
+    serverConfig = Dict(
+        "num_classes" => numClasses,
+        "num_clients" => numClients,
+        "participation_rate" => 0.3,
+        "learning_rate" => 1.0
+    )
+
+    # model structure
+    dim = 32
+
+    # Construct clients
+    clients = Vector{ScaffoldClientNN}(undef, numClients)
+    for i = 1:numClients
+        clients[i] = ScaffoldClientNN(i, Xsplit[i], Ysplit[i], dim, clientConfig)
+    end
+    # Construct server
+    server = ScaffoldServerNN(Xtest, Ytest, dim, serverConfig)
+
+    # Train
+    _, objList, testAccList = Scaffold(server, clients, numRounds)
+    writeToFile(
+        "mnist",
+        "softmax classification with MLP",
+        serverConfig,
+        clientConfig,
+        objList,
+        testAccList,
+        "results/Scaffold_MLP_lambda1e-2_lr1e-1.csv"    # file stored.
+    )
+    # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
+
+    @printf("Test finished!\n")
+end

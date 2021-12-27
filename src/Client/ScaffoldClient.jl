@@ -89,3 +89,76 @@ function getObjValue(
     objValue = obj(client.Xtrain, client.Ytrain, client.W, client.λ)
     return objValue
 end
+
+########################################################################################################
+mutable struct ScaffoldClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Zygote.Params, T5<:Flux.OneHotArray, T6<:Function, T7<:Flux.Chain} <: AbstractClient
+    id::T1                                  # client index
+    Xtrain::T3                              # training data
+    XtrainT::T3                             # Row copy
+    Ytrain::T5                              # training label
+    W::T7                                   # (model) primal variable
+    ΔW::T4                                  # Update of model
+    C::T4                                   # Control variate
+    ΔC::T4                                  # Update of control variate
+    globalC::T4                             # Global control variate
+    lr::T2                                  # learning rate
+    λ::T2                              # L2 regularization parameter
+    numLocalEpochs::T1                       # number of local steps
+    function ScaffoldClientNN(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, dim::Int64, config::Dict{String,Real})
+        num_classes = config["num_classes"]
+        Ytrain = Flux.onehotbatch(Ytrain, 1:num_classes)
+        λ = config["lambda"]
+        learning_rate = config["learning_rate"]
+        numLocalEpochs = config["numLocalEpochs"]
+        # d = size(Xtrain, 2)
+        W = Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)
+        ΔW = deepcopy( params(W) )
+        C = deepcopy( params(W) )
+        ΔC = deepcopy( params(W) )
+        globalC = deepcopy( params(W) )
+        for j = 1:length(ΔW)
+            fill!(ΔW[j], 0.0)
+            fill!(C[j], 0.0)
+            fill!(ΔC[j], 0.0)
+            fill!(globalC[j], 0.0)
+        end
+        XtrainT = copy(Xtrain')
+        # y = zeros(Float64, num_classes, d)
+        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Zygote.Params, Flux.OneHotArray, Function, Flux.Chain}(id, Xtrain, XtrainT, Ytrain, W, ΔW, C, ΔC, globalC, learning_rate, λ, numLocalEpochs)
+    end
+end
+
+
+# Model update on local device
+function update!(
+    client::ScaffoldClientNN
+)
+    lr = client.lr
+    W = client.W
+    λ = client.λ
+    Xt = client.XtrainT
+    X = client.Xtrain
+    Y = client.Ytrain
+    # data
+    data = Flux.Data.DataLoader((Xt, Y), batchsize=128, shuffle=true)
+    # Store Wold
+    Wold = deepcopy( params(W) )
+    # loss
+    sqnorm(w) = sum(abs2, w)
+    loss(x, l) = Flux.crossentropy(W(x), l) + (λ/2) * sum(sqnorm, params(W)) - dot(params(W), client.C) + dot(params(W), client.globalC)
+    # optimizer 
+    opt = Descent(lr)
+    # train
+    for t = 1:client.numLocalEpochs
+        # @printf "   epoch: %d, obj: %4.4e, acc: %4.4e\n" t obj(Xt, Y, W, λ) accuracy(X, Y, W)
+        Flux.train!(loss, params(W), data, opt)
+    end
+    # Implement option II from the Scaffold paper.
+    n = size(X, 1)
+    K = client.numLocalEpochs*floor(Int64, n/128)
+    for j = 1:length( client.ΔC )
+        client.ΔC[j] .= (-client.globalC[j] + 1/(K*lr)*( Wold[j] - params(W)[j] ) )
+        client.C[j] .= client.C[j] + client.ΔC[j]
+        client.ΔW[j] .= ( params(W)[j] - Wold[j] )
+    end
+end

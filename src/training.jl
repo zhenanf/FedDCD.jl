@@ -42,8 +42,8 @@ end
 
 # Implementation of the Scaffold algorithm.
 function Scaffold(
-    server::ScaffoldServer,
-    clients::Vector{ScaffoldClient},
+    server::Union{ScaffoldServer, ScaffoldServerNN},
+    clients::Union{Vector{ScaffoldClient}, Vector{ScaffoldClientNN} },
     numRounds::Int64
 )
     # Connect clients with server

@@ -92,7 +92,7 @@ function adam!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux
     # train
     for t = 1:num_epoches
         Flux.train!(loss, params(W), data, opt)
-        # @printf "epoch: %d, obj: %.2f, acc: %.2f\n" t obj(Xt, Y, W, λ) accuracy(Xt, Y, W)
+        # @printf "epoch: %d, obj: %.2f, acc: %.2f\n" t obj(Xt, Y, W, λ) accuracy(Xt', Y, W)
     end
 end
 
@@ -109,7 +109,7 @@ function sgd!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.
     opt = Descent(lr)
     # train
     for t = 1:num_epoches
-        # @printf "   epoch: %d, obj: %4.4e, acc: %4.4e\n" t obj(Xt, Y, W, λ) accuracy(Xt, Y, W)
+        # @printf "   epoch: %d, obj: %4.4e, acc: %4.4e\n" t obj(Xt, Y, W, λ) accuracy(Xt', Y, W)
         Flux.train!(loss, params(W), data, opt)
     end
 end

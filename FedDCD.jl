@@ -16,7 +16,7 @@ using Zygote
 export FedProxClient, ScaffoldClient, FedDCDClient, AccFedDCDClient, getObjValue
 export FedProxServer, ScaffoldServer, FedDCDServer, AccFedDCDServer, getObjValue
 export FedDCDClientNN, FedDCDServerNN, AccFedDCDClientNN, AccFedDCDServerNN
-export FedProxClientNN, FedProxServerNN
+export FedProxClientNN, FedProxServerNN, ScaffoldClientNN, ScaffoldServerNN
 export softmax, neg_log_loss
 export split_data, splitDataByRow, labelTransform, writeToFile, splitDataByClass
 export read_libsvm
