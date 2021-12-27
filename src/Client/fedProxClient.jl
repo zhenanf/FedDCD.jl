@@ -79,3 +79,36 @@ function getObjValue(
     objValue = obj(client.Xtrain, client.Ytrain, client.W, client.λ)
     return objValue
 end
+
+
+########################################################################################################
+mutable struct FedProxClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Zygote.Params, T5<:Flux.OneHotArray, T6<:Function, T7<:Flux.Chain} <: AbstractClient
+    id::T1                                  # client index
+    Xtrain::T3                              # training data
+    XtrainT::T3                             # Row copy
+    Ytrain::T5                              # training label
+    W::T7                                   # (model) primal variable
+    lr::T2                                  # learning rate
+    λ::T2                              # L2 regularization parameter
+    μ::T2                                   # mu for proximal operation
+    numLocalEpochs::T1                       # number of local steps
+    function FedProxClientNN(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, dim::Int64, config::Dict{String,Real})
+        numClasses = config["num_classes"]
+        Ytrain = Flux.onehotbatch(Ytrain, 1:numClasses)
+        λ = config["lambda"]
+        learning_rate = config["learning_rate"]
+        numLocalEpochs = config["numLocalEpochs"]
+        μ = config["mu"]
+        W = Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)
+        XtrainT = copy(Xtrain')
+        # y = zeros(Float64, num_classes, d)
+        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Zygote.Params, Flux.OneHotArray, Function, Flux.Chain}(id, Xtrain, XtrainT, Ytrain, W, learning_rate, λ, μ, numLocalEpochs)
+    end
+end
+
+# Model update on local device
+function update!(
+    client::FedProxClientNN
+)
+    sgd!(client.XtrainT, client.Ytrain, client.W, client.λ, client.μ, client.lr)
+end

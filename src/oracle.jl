@@ -95,3 +95,21 @@ function adam!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux
         # @printf "epoch: %d, obj: %.2f, acc: %.2f\n" t obj(Xt, Y, W, λ) accuracy(Xt, Y, W)
     end
 end
+
+# Run SGD for each individual problem with neural nets as their models.
+function sgd!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.Chain, λ::Float64, μ::Float64, lr::Float64; num_epoches::Int64=20)
+    # data
+    data = Flux.Data.DataLoader((Xt, Y), batchsize=128, shuffle=true)
+    # Store Wold
+    Wold = deepcopy( params(W) )
+    # loss
+    sqnorm(w) = sum(abs2, w)
+    loss(x, l) = Flux.crossentropy(W(x), l) + ((λ+μ)/2) * sum(sqnorm, params(W)) - μ*dot(params(W), Wold)
+    # optimizer 
+    opt = Descent(lr)
+    # train
+    for t = 1:num_epoches
+        # @printf "   epoch: %d, obj: %4.4e, acc: %4.4e\n" t obj(Xt, Y, W, λ) accuracy(Xt, Y, W)
+        Flux.train!(loss, params(W), data, opt)
+    end
+end

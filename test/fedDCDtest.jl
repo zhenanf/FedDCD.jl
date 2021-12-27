@@ -230,13 +230,14 @@ function TestNN(
     # data loader
     data = Flux.Data.DataLoader((XtrainT, Ytrain), batchsize=128, shuffle=true)
     # optimizer
-    opt = ADAMW(0.001, (0.89, 0.995), 1e-8)
+    # opt = ADAMW(0.001, (0.89, 0.995), 1e-8)
+    opt = Descent(1e-2)
     # loss 
-    λ = 0.0
+    λ = 1e-2
     sqnorm(w) = sum(abs2, w)
     loss(x, l) = Flux.crossentropy(model(x), l) + (λ/2)*sum(sqnorm, params(model)) 
     #training 
-    num_epoches = 20
+    num_epoches = 100
     for t = 1:num_epoches
         @printf "epoch: %d, training obj: %.2f, test accuracy: %.2f\n" t loss(XtrainT, Ytrain) accuracy(XtestT, Ytest, model)
         Flux.train!(loss, params(model), data, opt)  

@@ -4,7 +4,7 @@ using SparseArrays
 using Random
 # Testing FedAvg
 # testFedAvg("data/rcv1_train.binary")
-# TestFedAvgAndProx("data/rcv1_train.multiclass", "data/rcv1_train.multiclass")
+# TestFedAvgAndProx("data/rcv1_train.binary", "data/rcv1_train.binary")
 function TestFedAvgAndProx(
     fileTrain::String,
     fileTest::String
@@ -33,10 +33,10 @@ function TestFedAvgAndProx(
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-4,
-        "mu" => 1e-4,
-        # "mu" => 0.0,
-        "learning_rate" => 1e-1,
+        "lambda" => 1e-3,
+        # "mu" => 1e-4,
+        "mu" => 0.0,
+        "learning_rate" => 1e-2,
         "numLocalEpochs" => 5,
     )
 
@@ -63,7 +63,7 @@ function TestFedAvgAndProx(
         clientConfig,
         objList,
         testAccList,
-        "results/FedProx_logReg_RCV1_lambda1e-4_lr1e-1.csv"    # file stored.
+        "results/FedAvg_logReg_RCV1_lambda1e-3_lr1e-2.csv"    # file stored.
     )
     # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
@@ -101,7 +101,7 @@ function TestScaffold(
     clientConfig = Dict(
         "num_classes" => numClasses,
         "lambda" => 1e-3,
-        "learning_rate" => 1e-3,
+        "learning_rate" => 1e-1,
         "numLocalEpochs" => 5,
     )
 
@@ -123,24 +123,25 @@ function TestScaffold(
     # Train
     _, objList, testAccList = Scaffold(server, clients, numRounds)
     writeToFile(
-        "mnist",
+        "rcv1",
         "softmax classification",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
-        "results/Scaffold_logReg_lambda1e-3.csv"    # file stored.
+        "results/Scaffold_logReg_RCV1_lambda1e-3_lr1e-1.csv"    # file stored.
     )
     # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
     @printf("Test finished!\n")
 end
 
+# rcv1, lambda = 1e-3, optimal obj=4.18584773e-01
 function TestNewtonMethod()
     # fileTrain = "data/mnist.scale"
     # fileTest = "data/mnist.scale.t"
-    fileTrain = "data/covtype.scale01"
-    fileTest = "data/covtype.scale01"
+    fileTrain = "data/rcv1_train.binary"
+    fileTest = "data/rcv1_train.binary"
     X, Y = read_libsvm(fileTrain);
     Xtest, Ytest = read_libsvm(fileTest)
     Xt = copy(X')
@@ -152,7 +153,7 @@ function TestNewtonMethod()
     @show(size(X))
     @show(size(Xtest))
     W = zeros(Float64, d, K)
-    λ = 1e-2
+    λ = 1e-3
 
     maxIter = 20
     tol = 1e-6
@@ -175,4 +176,75 @@ function TestNewtonMethod()
         W .-= η*D
     end
     
+end
+
+#############################################################################################################
+
+# TestFedAvgAndProxNN("data/mnist.scale", "data/mnist.scale.t")
+function TestFedAvgAndProxNN(
+    fileTrain::String,
+    fileTest::String
+    # participationRate::Float64,
+    # lambda::Float64
+    )
+    numClients = 10
+    numRounds = 100
+    # Read data
+    # filename = "data/rcv1_train.binary"
+    # filename = "data/mnist.scale"
+    Xtrain, Ytrain = read_libsvm(fileTrain)
+    Xtest, Ytest = read_libsvm(fileTest)
+    Ytrain, Ytest = labelTransform(Ytrain, Ytest)
+    # Set Xtrain and Xtest same number of feature
+    Itr, Jtr, Vtr = findnz(Xtrain)
+    Ite, Jte, Vte = findnz(Xtest)
+    d = max( size(Xtrain, 2), size(Xtest, 2) )
+    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d)
+    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d)
+
+    numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
+    # Split data
+    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)    
+
+    # Setup config, running FedAvg if mu=0.
+    clientConfig = Dict(
+        "num_classes" => numClasses,
+        "lambda" => 1e-2,
+        # "mu" => 1e-4,
+        "mu" => 0.0,
+        "learning_rate" => 1e-2,
+        "numLocalEpochs" => 20,
+    )
+
+    serverConfig = Dict(
+        "num_classes" => numClasses,
+        "num_clients" => numClients,
+        "participation_rate" => 0.3
+    )
+
+    # model structure
+    dim = 32
+
+    # Construct clients
+    clients = Vector{FedProxClientNN}(undef, numClients)
+    for i = 1:numClients
+        clients[i] = FedProxClientNN(i, Xsplit[i], Ysplit[i], dim, clientConfig)
+    end
+    # Construct server
+    server = FedProxServerNN(Xtest, Ytest, dim, serverConfig)
+
+    # Train
+    _, objList, testAccList = fedAvgAndProx(server, clients, numRounds)
+    writeToFile(
+        "mnist",
+        "softmax classification with MLP",
+        serverConfig,
+        clientConfig,
+        objList,
+        testAccList,
+        "results/FedAvg_MLP_lambda1e-2_lr1e-2.csv"    # file stored.
+    )
+    # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
+
+    @printf("Test finished!\n")
 end

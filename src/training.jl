@@ -4,8 +4,8 @@
 
 # Implementation of the FedAvg and FedProx algorithm
 function fedAvgAndProx(
-    server::FedProxServer,
-    clients::Vector{FedProxClient},
+    server::Union{FedProxServer, FedProxServerNN},
+    clients::Union{Vector{FedProxClient}, Vector{FedProxClientNN} },
     numRounds::Int64
 )
     # Connect clients with server
@@ -24,9 +24,11 @@ function fedAvgAndProx(
             client = server.clients[idx]
             update!(client)
         end
+        @printf("aggregate\n")
         aggregate!(server)
         # Print log
         sendModelToAllClients!(server)
+        @printf("getObj\n")
         objValue = getObjValue(server)
         acc = accuracy(server.Xtest, server.Ytest, server.W)
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
@@ -140,7 +142,7 @@ function fedDCD(
         #     acc += n*accuracy(c.XtrainT, c.Ytrain, server.W)
         # end
         # acc /= num_data
-        acc = accuracy(server.XtestT, server.Ytest, server.W)
+        acc = accuracy(server.Xtest, server.Ytest, server.W)
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
         push!(objList, objValue)
         push!(testAccList, acc)
