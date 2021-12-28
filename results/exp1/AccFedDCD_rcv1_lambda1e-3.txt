@@ -1,6 +1,6 @@
 # Configuration:
 
-dataset name: mnist
+dataset name: rcv1
 model name: softmax classification
 num_clients: 100
 learning_rate: 0.99
