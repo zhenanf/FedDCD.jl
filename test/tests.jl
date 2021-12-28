@@ -7,12 +7,18 @@ using Random
 # TestFedAvgAndProx("data/rcv1_train.binary", "data/rcv1_train.binary")
 function TestFedAvgAndProx(
     fileTrain::String,
-    fileTest::String
+    fileTest::String,
+    lambda::Float64,
+    mu::Float64,
+    participationRate::Float64,
+    localLr::Float64,
+    numRounds::Int64,
+    writeFileName::String
     # participationRate::Float64,
     # lambda::Float64
     )
     numClients = 100
-    numRounds = 100
+    numRounds = numRounds
     # Read data
     # filename = "data/rcv1_train.binary"
     # filename = "data/mnist.scale"
@@ -33,17 +39,18 @@ function TestFedAvgAndProx(
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-3,
+        "lambda" => lambda,
         # "mu" => 1e-4,
-        "mu" => 0.0,
-        "learning_rate" => 1e-2,
+        # "mu" => 0.0,
+        "mu" => mu,
+        "learning_rate" => localLr,
         "numLocalEpochs" => 5,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
-        "participation_rate" => 0.3
+        "participation_rate" => participationRate
     )
 
     # Construct clients
@@ -63,7 +70,8 @@ function TestFedAvgAndProx(
         clientConfig,
         objList,
         testAccList,
-        "results/FedAvg_logReg_RCV1_lambda1e-3_lr1e-2.csv"    # file stored.
+        writeFileName
+        # "results/FedAvg_logReg_RCV1_lambda1e-3_lr1e-2.csv"    # file stored.
     )
     # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
@@ -74,12 +82,17 @@ end
 # TestScaffold("data/mnist.scale", "data/mnist.scale.t")
 function TestScaffold(
     fileTrain::String,
-    fileTest::String
+    fileTest::String,
+    lambda::Float64,
+    participationRate::Float64,
+    localLr::Float64,
+    numRounds::Int64,
+    writeFileName::String
     # participationRate::Float64,
     # lambda::Float64
     )
     numClients = 100
-    numRounds = 100
+    numRounds = numRounds
     # Read data
     # filename = "data/rcv1_train.binary"
     # filename = "data/mnist.scale"
@@ -100,15 +113,15 @@ function TestScaffold(
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-3,
-        "learning_rate" => 1e-1,
+        "lambda" => lambda,
+        "learning_rate" => localLr,
         "numLocalEpochs" => 5,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
-        "participation_rate" => 0.3,
+        "participation_rate" => participationRate,
         "learning_rate" => 1.0
     )
 
@@ -129,7 +142,8 @@ function TestScaffold(
         clientConfig,
         objList,
         testAccList,
-        "results/Scaffold_logReg_RCV1_lambda1e-3_lr1e-1.csv"    # file stored.
+        writeFileName
+        # "results/Scaffold_logReg_RCV1_lambda1e-3_lr1e-1.csv"    # file stored.
     )
     # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
@@ -183,12 +197,18 @@ end
 # TestFedAvgAndProxNN("data/mnist.scale", "data/mnist.scale.t")
 function TestFedAvgAndProxNN(
     fileTrain::String,
-    fileTest::String
+    fileTest::String,
+    lambda::Float64,
+    mu::Float64,
+    participationRate::Float64,
+    localLr::Float64,
+    numRounds::Int64,
+    writeFileName::String
     # participationRate::Float64,
     # lambda::Float64
     )
     numClients = 10
-    numRounds = 100
+    numRounds = numRounds
     # Read data
     # filename = "data/rcv1_train.binary"
     # filename = "data/mnist.scale"
@@ -209,17 +229,18 @@ function TestFedAvgAndProxNN(
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-2,
+        "lambda" => lambda,
         # "mu" => 1e-4,
-        "mu" => 0.0,
-        "learning_rate" => 1e-2,
-        "numLocalEpochs" => 20,
+        # "mu" => 0.0,
+        "mu" => mu,
+        "learning_rate" => localLr,
+        "numLocalEpochs" => 5,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
-        "participation_rate" => 0.3
+        "participation_rate" => participationRate
     )
 
     # model structure
@@ -242,7 +263,8 @@ function TestFedAvgAndProxNN(
         clientConfig,
         objList,
         testAccList,
-        "results/FedAvg_MLP_lambda1e-2_lr1e-2.csv"    # file stored.
+        writeFileName
+        # "results/FedAvg_MLP_lambda1e-2_lr1e-2.csv"    # file stored.
     )
     # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
@@ -254,12 +276,17 @@ end
 # TestScaffoldNN("data/mnist.scale", "data/mnist.scale.t")
 function TestScaffoldNN(
     fileTrain::String,
-    fileTest::String
+    fileTest::String,
+    lambda::Float64,
+    participationRate::Float64,
+    localLr::Float64,
+    numRounds::Int64,
+    writeFileName::String
     # participationRate::Float64,
     # lambda::Float64
     )
-    numClients = 10
-    numRounds = 100
+    numClients = 100
+    numRounds = numRounds
     # Read data
     # filename = "data/rcv1_train.binary"
     # filename = "data/mnist.scale"
@@ -280,15 +307,15 @@ function TestScaffoldNN(
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-2,
-        "learning_rate" => 1e-2,
-        "numLocalEpochs" => 20,
+        "lambda" => lambda,
+        "learning_rate" => localLr,
+        "numLocalEpochs" => 5,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
-        "participation_rate" => 0.3,
+        "participation_rate" => participationRate,
         "learning_rate" => 1.0
     )
 
@@ -312,7 +339,8 @@ function TestScaffoldNN(
         clientConfig,
         objList,
         testAccList,
-        "results/Scaffold_MLP_lambda1e-2_lr1e-1.csv"    # file stored.
+        writeFileName
+        # "results/Scaffold_MLP_lambda1e-2_lr1e-1.csv"    # file stored.
     )
     # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
