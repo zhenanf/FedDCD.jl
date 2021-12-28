@@ -207,7 +207,7 @@ function TestFedAvgAndProxNN(
     # participationRate::Float64,
     # lambda::Float64
     )
-    numClients = 10
+    numClients = 100
     numRounds = numRounds
     # Read data
     # filename = "data/rcv1_train.binary"

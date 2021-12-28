@@ -10,8 +10,8 @@ using LinearMaps
 using IterativeSolvers
 using DataFrames
 using CSV
-using Flux
 using Zygote
+using Flux
 
 export FedProxClient, ScaffoldClient, FedDCDClient, AccFedDCDClient, getObjValue
 export FedProxServer, ScaffoldServer, FedDCDServer, AccFedDCDServer, getObjValue
