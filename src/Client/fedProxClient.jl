@@ -110,5 +110,5 @@ end
 function update!(
     client::FedProxClientNN
 )
-    sgd!(client.XtrainT, client.Ytrain, client.W, client.λ, client.μ, client.lr)
+    sgd!(client.XtrainT, client.Ytrain, client.W, client.λ, client.μ, client.lr, client.numLocalEpochs)
 end

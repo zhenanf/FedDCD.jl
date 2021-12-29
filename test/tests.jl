@@ -34,7 +34,8 @@ function TestFedAvgAndProx(
     
     numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
     # Split data
-    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)    
+    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)   
+    # Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses ) 
 
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
@@ -108,7 +109,8 @@ function TestScaffold(
     
     numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
     # Split data
-    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)    
+    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)  
+    # Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses )  
 
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
@@ -225,6 +227,8 @@ function TestFedAvgAndProxNN(
     numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
     # Split data
     Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)    
+    # Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses )
+
 
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
@@ -303,6 +307,7 @@ function TestScaffoldNN(
     numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
     # Split data
     Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)    
+    # Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses )
 
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(

@@ -97,7 +97,7 @@ function adam!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux
 end
 
 # Run SGD for each individual problem with neural nets as their models.
-function sgd!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.Chain, λ::Float64, μ::Float64, lr::Float64; num_epoches::Int64=5)
+function sgd!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.Chain, λ::Float64, μ::Float64, lr::Float64, num_epoches::Int64)
     # data
     data = Flux.Data.DataLoader((Xt, Y), batchsize=128, shuffle=true)
     # Store Wold

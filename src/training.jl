@@ -20,7 +20,7 @@ function fedAvgAndProx(
         sendModel!(server)
         # objValue = getObjValue(server)
         # @printf("Round : %4d, obj: %6.4e\n", t, objValue)
-        for idx in server.selectedIndices
+        Threads.@threads for idx in server.selectedIndices
             client = server.clients[idx]
             update!(client)
         end
@@ -34,6 +34,9 @@ function fedAvgAndProx(
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
         push!(objList, objValue)
         push!(testAccList, acc)
+        if isnan(objValue)
+            break
+        end
     end
     endTime = time()
     @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
@@ -58,7 +61,7 @@ function Scaffold(
         sendModel!(server)
         # objValue = getObjValue(server)
         # @printf("Round : %4d, obj: %6.4e\n", t, objValue)
-        for idx in server.selectedIndices
+        Threads.@threads for idx in server.selectedIndices
             client = server.clients[idx]
             update!(client)
         end
@@ -70,6 +73,9 @@ function Scaffold(
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
         push!(objList, objValue)
         push!(testAccList, acc)
+        if isnan(objValue)
+            break
+        end
     end
     endTime = time()
     @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
@@ -104,6 +110,9 @@ function fedDCD(
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
         push!(objList, objValue)
         push!(testAccList, acc)
+        if isnan(objValue)
+            break
+        end
     end
     endTime = time()
     @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
@@ -146,6 +155,9 @@ function fedDCD(
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
         push!(objList, objValue)
         push!(testAccList, acc)
+        if isnan(objValue)
+            break
+        end
     end
     endTime = time()
     @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
@@ -202,6 +214,9 @@ function accfedDCD(
         if objValue < objMin
             break
         end
+        if isnan(objValue)
+            break
+        end
     end
     endTime = time()
     @printf("Finished training, time elapsed: %.4e\n", endTime - startTime)
@@ -256,6 +271,9 @@ function accfedDCD(
         push!(objList, objValue)
         push!(testAccList, acc)
         if objValue < objMin
+            break
+        end
+        if isnan(objValue)
             break
         end
     end
