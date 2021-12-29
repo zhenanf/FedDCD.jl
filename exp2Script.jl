@@ -46,7 +46,7 @@ TestScaffold(
     participationRate,
     localLr,
     numRounds,
-    "results/exp3/Scaffold_logReg_mnist_lambda1e-2_tau1e-1.txt"
+    "results/exp2/Scaffold_logReg_mnist_lambda1e-2_tau1e-1.txt"
 )
 
 
@@ -191,7 +191,7 @@ TestScaffold(
     participationRate,
     localLr,
     numRounds,
-    "results/exp3/Scaffold_logReg_mnist_lambda1e-2_tau5e-2.txt"
+    "results/exp2/Scaffold_logReg_mnist_lambda1e-2_tau5e-2.txt"
 )
 
 
