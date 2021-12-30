@@ -108,37 +108,35 @@ end
 
 # Split data by class
 function splitDataByClass(Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, num_clients::Int64, num_classes::Int64)
+    Random.seed!(1234)
     XT = copy(Xtrain')
     Xtrain_split = Vector{ SparseMatrixCSC{Float64, Int64} }(undef, num_clients)
     Ytrain_split = Vector{ Vector{Int64} }(undef, num_clients)
     # assign 2 classes to each client 
     classes_clients = Vector{Tuple{Int64, Int64}}(undef, num_clients)
-    num_per_class = zeros(Int64, num_classes)
     for i in 1:num_clients
-        a = samplepair(collect(0:num_classes-1))
+        a = samplepair(collect(1:num_classes))
         classes_clients[i] = a
-        num_per_class[a[1]+1] += 1
-        num_per_class[a[2]+1] += 1
     end
-    # divide data via classes 
-    D = Dict{Int64, Vector{Int64}}()
-    for i in 0:(num_classes-1)
-        D[i] = findall(x->(x==i), Ytrain)
+    # clients in each class
+    clients_in_classes = [ [] for _ = 1:num_classes]
+    for i = 1:num_classes
+        for j = 1:num_clients
+            if (classes_clients[j][1] == i) || (classes_clients[j][2] == i)
+                push!(clients_in_classes[i], j)
+            end
+        end
     end
-    Δ = zeros(Int64, num_classes)
-    for i in 1:num_classes
-        Δ[i] = div( length(D[i-1]), num_per_class[i])
+    # intialize indices
+    indices = [ [] for _ = 1:num_clients]
+    for i = 1:length(Ytrain)
+        class = Ytrain[i]
+        j = rand(clients_in_classes[class])
+        push!(indices[j], i)
     end
-    # divide data
-    idx = ones(Int64, num_classes)
+    # fill in
     for i in 1:num_clients
-        c1 = classes_clients[i][1]
-        indices1 = D[c1][idx[c1+1]: idx[c1+1]+Δ[c1+1]-1]
-        idx[c1+1] += Δ[c1+1]
-        c2 = classes_clients[i][2]
-        indices2 = D[c2][idx[c2+1]: idx[c2+1]+Δ[c2+1]-1]
-        idx[c2+1] += Δ[c2+1]
-        ids = vcat(indices1, indices2)
+        ids = indices[i]
         Xtrain_split[i] = copy( XT[:,ids]' )
         Ytrain_split[i] = Ytrain[ids]
     end
