@@ -106,7 +106,7 @@ function fedDCD(
         sendModel!(server)
         # Print log
         objValue = getObjValue(server)
-        acc = accuracy(server.XtestT, server.Ytest, server.W)
+        acc = accuracy(server.Xtest, server.Ytest, server.W)
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
         push!(objList, objValue)
         push!(testAccList, acc)
@@ -266,7 +266,7 @@ function accfedDCD(
         sendModel!(server, 2)
         # Print log
         objValue = getObjValue(server)
-        acc = accuracy(server.XtestT, server.Ytest, server.W)
+        acc = accuracy(server.Xtest, server.Ytest, server.W)
         @printf("Round : %4d, obj: %6.4e, acc: % 3.2f %%, time: %4.3f s\n", t, objValue, acc*100, time()-startTime)
         push!(objList, objValue)
         push!(testAccList, acc)

@@ -64,7 +64,7 @@ end
 function update!(
     client::FedDCDClientNN
 )
-    @printf("Client %d locally update\n", client.id)
+    # @printf("Client %d locally update\n", client.id)
     client.oracle!(client.XtrainT, client.Ytrain, client.W, client.y, client.λ)
 end
 
@@ -160,7 +160,7 @@ mutable struct AccFedDCDClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Flo
             fill!(u[j], 0.0)
         end
         XtrainT = copy(Xtrain')
-        κ = λ
+        κ = 100*λ
         a = sqrt(κ) / (1/r + sqrt(κ))
         b = a*κ*r^2
         new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Zygote.Params, Flux.OneHotArray, Function, Flux.Chain}(id, Xtrain, XtrainT, Ytrain, W, y, z, v, u, λ, r, κ, a, b, oracle!)
