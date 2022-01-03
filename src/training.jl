@@ -141,6 +141,7 @@ function fedDCD(
         end
         aggregate!(server)
         sendModel!(server)
+        decay_lr!(server)
         # Print log
         objValue = getObjValue(server)
         # acc = 0.0

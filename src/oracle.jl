@@ -81,14 +81,15 @@ function sgd!(X::SparseMatrixCSC{Float64, Int64}, Xt::SparseMatrixCSC{Float64, I
 end
 
 # run adam to obtain an exact/ineact dual gradient
-function adam!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.Chain, y::Zygote.Params, λ::Float64; num_epoches::Int64=20)
+function adam!(Xt::SparseMatrixCSC{Float64, Int64}, Y::Flux.OneHotArray, W::Flux.Chain, y::Zygote.Params, λ::Float64; num_epoches::Int64=5)
     # data
     data = Flux.Data.DataLoader((Xt, Y), batchsize=128, shuffle=true)
     # loss
     sqnorm(w) = sum(abs2, w)
     loss(x, l) = Flux.crossentropy(W(x), l) + (λ/2) * sum(sqnorm, params(W)) - dot(params(W), y)
     # optimizer 
-    opt = ADAMW(0.001, (0.89, 0.995), 1e-8)
+    # opt = ADAMW(0.001, (0.89, 0.995), 1e-8)
+    opt = Descent(1e-1)
     # train
     for t = 1:num_epoches
         Flux.train!(loss, params(W), data, opt)

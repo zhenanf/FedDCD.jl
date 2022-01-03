@@ -11,11 +11,9 @@ using Flux
 function TestFedDCD(
     fileTrain::String,
     fileTest::String
-    # participationRate::Float64,
-    # lambda::Float64
     )
     numClients = 100
-    numRounds = 100
+    numRounds = 500
     # Read data
     # filename = "data/rcv1_train.binary"
     # filename = "data/mnist.scale"
@@ -31,7 +29,8 @@ function TestFedDCD(
     
     numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
     # Split data
-    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)     
+    # Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients) 
+    Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses)
 
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
@@ -67,7 +66,7 @@ function TestFedDCD(
         clientConfig,
         objList,
         testAccList,
-        "results/FedDCD_logReg_COV_lambda1e-2.csv"    # file stored.
+        "results/exp3/FedDCD_logReg_MNIST_niid.txt"    # file stored.
     )
 
     @printf("Test finished!\n")
@@ -80,24 +79,23 @@ function TestAccFedDCD(
     fileTrain::String,
     fileTest::String
     )
-    numClients = 100
-    numRounds = 100
+    numClients = 100;
+    numRounds = 500;
     # Read data
-    # filename = "data/rcv1_train.binary"
-    # filename = "data/mnist.scale"
-    Xtrain, Ytrain = read_libsvm(fileTrain)
-    Xtest, Ytest = read_libsvm(fileTest)
-    Ytrain, Ytest = labelTransform(Ytrain, Ytest)
+    Xtrain, Ytrain = read_libsvm(fileTrain);
+    Xtest, Ytest = read_libsvm(fileTest);
+    Ytrain, Ytest = labelTransform(Ytrain, Ytest);
     # Set Xtrain and Xtest same number of feature
-    Itr, Jtr, Vtr = findnz(Xtrain)
-    Ite, Jte, Vte = findnz(Xtest)
-    d = max( size(Xtrain, 2), size(Xtest, 2) )
-    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d)
-    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d)
+    Itr, Jtr, Vtr = findnz(Xtrain);
+    Ite, Jte, Vte = findnz(Xtest);
+    d = max( size(Xtrain, 2), size(Xtest, 2) );
+    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d);
+    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d);
     
-    numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
+    numClasses = length( union( Set(Ytrain), Set(Ytest) ) );
     # Split data
-    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)  
+    # Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients) 
+    Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses) 
 
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
@@ -133,7 +131,7 @@ function TestAccFedDCD(
         clientConfig,
         objList,
         testAccList,
-        "results/AccFedDCD_logReg_lambda1e-2.csv"    # file stored.
+        "results/exp3/AccFedDCD_logReg_MNIST_niid.txt"     # file stored.
     )
 
     @printf("Test finished!\n")
@@ -144,34 +142,36 @@ function TestFedDCDNN(
     fileTrain::String,
     fileTest::String
     )
-    numClients = 10
-    numRounds = 100
+    numClients = 100;
+    numRounds = 100;
     # Read data
-    Xtrain, Ytrain = read_libsvm(fileTrain)
-    Xtest, Ytest = read_libsvm(fileTest)
-    Ytrain, Ytest = labelTransform(Ytrain, Ytest)
+    Xtrain, Ytrain = read_libsvm(fileTrain);
+    Xtest, Ytest = read_libsvm(fileTest);
+    Ytrain, Ytest = labelTransform(Ytrain, Ytest);
     # Set Xtrain and Xtest same number of feature
-    Itr, Jtr, Vtr = findnz(Xtrain)
-    Ite, Jte, Vte = findnz(Xtest)
-    d = max( size(Xtrain, 2), size(Xtest, 2) )
-    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d)
-    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d)
+    Itr, Jtr, Vtr = findnz(Xtrain);
+    Ite, Jte, Vte = findnz(Xtest);
+    d = max( size(Xtrain, 2), size(Xtest, 2) );
+    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d);
+    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d);
     
-    numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
+    numClasses = length( union( Set(Ytrain), Set(Ytest) ) );
     # Split data
-    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)     
+    # Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients) 
+    Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses)   
 
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-3,
+        "lambda" => 1e-2,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
         "participation_rate" => 0.3,
-        "learning_rate" => 1e-3,
+        "learning_rate" => 0.1,
+        "decay_rate" => 0.0,
     )
     
     # model structure
@@ -182,9 +182,6 @@ function TestFedDCDNN(
     for i = 1:numClients
         clients[i] = FedDCDClientNN(i, Xsplit[i], Ysplit[i], dim, clientConfig, adam!)
     end
-
-    # test adam!
-    # adam!(clients[1].XtrainT, clients[1].Ytrain, clients[1].W, clients[1].y, clients[1].λ)
 
     # Construct server
     server = FedDCDServerNN(Xtest, Ytest, dim, serverConfig)
@@ -200,7 +197,7 @@ function TestFedDCDNN(
         clientConfig,
         objList,
         testAccList,
-        "results/FedDCD_MLP_lambda1e-3.csv"    # file stored.
+        "results/exp3/FedDCD_MLP_MNIST_niid_sgd_locallr1e-1_lr1e-1.txt"    # file stored.
     )
     return W
 end
@@ -230,18 +227,20 @@ function TestNN(
     # data loader
     data = Flux.Data.DataLoader((XtrainT, Ytrain), batchsize=128, shuffle=true)
     # optimizer
-    # opt = ADAMW(0.001, (0.89, 0.995), 1e-8)
-    opt = Descent(1e-2)
+    opt = ADAM()
     # loss 
     λ = 1e-2
     sqnorm(w) = sum(abs2, w)
     loss(x, l) = Flux.crossentropy(model(x), l) + (λ/2)*sum(sqnorm, params(model)) 
     #training 
-    num_epoches = 100
+    num_epoches = 1000
+    f = open("results/exp1/optval_MNIST_MLP_lambda1e-2.txt", "w")
     for t = 1:num_epoches
-        @printf "epoch: %d, training obj: %.2f, test accuracy: %.2f\n" t loss(XtrainT, Ytrain) accuracy(XtestT, Ytest, model)
+        # @printf "epoch: %d, training obj: %.4f, test accuracy: %.2f\n" t loss(XtrainT, Ytrain) accuracy(Xtest, Ytest, model)
+        @printf(f, "epoch: %d, training obj: %.6f\n", t, loss(XtrainT, Ytrain))
         Flux.train!(loss, params(model), data, opt)  
     end
+    close(f)
     return model
 end
 
@@ -250,22 +249,23 @@ function TestAccFedDCDNN(
     fileTrain::String,
     fileTest::String
     )
-    numClients = 10
-    numRounds = 100
+    numClients = 100;
+    numRounds = 100;
     # Read data
-    Xtrain, Ytrain = read_libsvm(fileTrain)
-    Xtest, Ytest = read_libsvm(fileTest)
-    Ytrain, Ytest = labelTransform(Ytrain, Ytest)
+    Xtrain, Ytrain = read_libsvm(fileTrain);
+    Xtest, Ytest = read_libsvm(fileTest);
+    Ytrain, Ytest = labelTransform(Ytrain, Ytest);
     # Set Xtrain and Xtest same number of feature
-    Itr, Jtr, Vtr = findnz(Xtrain)
-    Ite, Jte, Vte = findnz(Xtest)
-    d = max( size(Xtrain, 2), size(Xtest, 2) )
-    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d)
-    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d)
+    Itr, Jtr, Vtr = findnz(Xtrain);
+    Ite, Jte, Vte = findnz(Xtest);
+    d = max( size(Xtrain, 2), size(Xtest, 2) );
+    Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d);
+    Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d);
     
-    numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
+    numClasses = length( union( Set(Ytrain), Set(Ytest) ) );
     # Split data
-    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)     
+    # Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients) 
+    Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses)      
 
     # Setup config
     clientConfig = Dict(
@@ -278,7 +278,7 @@ function TestAccFedDCDNN(
         "num_classes" => numClasses,
         "num_clients" => numClients,
         "participation_rate" => 0.3,
-        "learning_rate" => 1e-2,
+        "learning_rate" => 1e-1,
     )
     
     # model structure
@@ -304,7 +304,7 @@ function TestAccFedDCDNN(
         clientConfig,
         objList,
         testAccList,
-        "results/AccFedDCD_MLP_lambda1e-2.csv"    # file stored.
+        "results/exp3/AccFedDCD_MLP_MNIST_niid_sgd_locallr1e-1_lr1e-1.txt"    # file stored.
     )
     return W
 end

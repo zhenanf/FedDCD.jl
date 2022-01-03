@@ -81,19 +81,21 @@ mutable struct FedDCDServerNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float6
     W::T6                           # aggregation of uploaded model updates
     τ::T1                           # number of particiating clients
     selectedIndices::T4             # selected clients
-    η::T2                           # learning rate                    
+    η::T2                           # learning rate
+    decay::T2                       # decay rate
     function FedDCDServerNN(Xtest::SparseMatrixCSC{Float64, Int64}, Ytest::Vector{Int64}, dim::Int64, config::Dict{String, Real})
         num_classes = config["num_classes"]
         num_clients = config["num_clients"]
         participation_rate = config["participation_rate"]
         η = config["learning_rate"]
+        decay = config["decay_rate"]
         W = Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)
         τ = floor(Int64, num_clients * participation_rate)
         XtestT = copy(Xtest')
         Ytest = Flux.onehotbatch(Ytest, 1:num_classes)
         clients = Vector{FedDCDClientNN}(undef, num_clients)
         selectedIndices = zeros(Int64, τ)
-        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Vector{Int64}, Vector{FedDCDClientNN}, Flux.Chain, Flux.OneHotArray}(Xtest, XtestT, Ytest, num_classes, num_clients, participation_rate, clients, W, τ, selectedIndices, η)
+        new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Vector{Int64}, Vector{FedDCDClientNN}, Flux.Chain, Flux.OneHotArray}(Xtest, XtestT, Ytest, num_classes, num_clients, participation_rate, clients, W, τ, selectedIndices, η, decay)
     end
 end
 
@@ -147,6 +149,11 @@ function synchronize!(server::FedDCDServerNN)
             params(c.W)[j] .= params(server.W)[j]
         end
     end
+end
+
+# update learning rate
+function decay_lr!(server::FedDCDServerNN)
+    server.η *= (1 - server.decay)
 end
 
 ########################################################################################################

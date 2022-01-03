@@ -226,8 +226,8 @@ function TestFedAvgAndProxNN(
 
     numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
     # Split data
-    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)    
-    # Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses )
+    # Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)    
+    Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses )
 
 
     # Setup config, running FedAvg if mu=0.
