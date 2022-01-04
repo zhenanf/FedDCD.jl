@@ -13,10 +13,8 @@ function TestFedDCD(
     fileTest::String
     )
     numClients = 100
-    numRounds = 500
-    # Read data
-    # filename = "data/rcv1_train.binary"
-    # filename = "data/mnist.scale"
+    numRounds = 1000
+
     Xtrain, Ytrain = read_libsvm(fileTrain)
     Xtest, Ytest = read_libsvm(fileTest)
     Ytrain, Ytest = labelTransform(Ytrain, Ytest)
@@ -29,22 +27,21 @@ function TestFedDCD(
     
     numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
     # Split data
-    # Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients) 
-    Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses)
+    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients) 
+    # Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses)
 
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
         "lambda" => 1e-2,
-        "mu" => 0,
         "learning_rate" => 1e-3,
-        "participation_rate" => 0.3,
+        "participation_rate" => 0.05,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
-        "participation_rate" => 0.3,
+        "participation_rate" => 0.05,
         "learning_rate" => 0.99,
     )
 
@@ -60,13 +57,13 @@ function TestFedDCD(
     W, objList, testAccList = fedDCD(server, clients, numRounds)
 
     writeToFile(
-        "covtype",
+        "mnist",
         "softmax classification",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
-        "results/exp3/FedDCD_logReg_MNIST_niid.txt"    # file stored.
+        "results/exp2/FedDCD_logReg_mnist_lambda1e-2_tau5e-2.txt"    # file stored.
     )
 
     @printf("Test finished!\n")
@@ -80,7 +77,7 @@ function TestAccFedDCD(
     fileTest::String
     )
     numClients = 100;
-    numRounds = 500;
+    numRounds = 1000;
     # Read data
     Xtrain, Ytrain = read_libsvm(fileTrain);
     Xtest, Ytest = read_libsvm(fileTest);
@@ -94,8 +91,8 @@ function TestAccFedDCD(
     
     numClasses = length( union( Set(Ytrain), Set(Ytest) ) );
     # Split data
-    # Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients) 
-    Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses) 
+    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients) 
+    # Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses) 
 
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
@@ -103,13 +100,13 @@ function TestAccFedDCD(
         "lambda" => 1e-2,
         "mu" => 0,
         "learning_rate" => 1e-3,
-        "participation_rate" => 0.3,
+        "participation_rate" => 0.05,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
-        "participation_rate" => 0.3,
+        "participation_rate" => 0.05,
         "learning_rate" => 0.99,
     )
 
@@ -131,7 +128,7 @@ function TestAccFedDCD(
         clientConfig,
         objList,
         testAccList,
-        "results/exp3/AccFedDCD_logReg_MNIST_niid.txt"     # file stored.
+        "results/exp2/AccFedDCD_logReg_mnist_lambda1e-2_tau5e-2.txt"    # file stored.
     )
 
     @printf("Test finished!\n")
