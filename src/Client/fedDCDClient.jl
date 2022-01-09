@@ -1,3 +1,4 @@
+# Client for FedDCD with linear local model
 mutable struct FedDCDClient{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Matrix{Float64}, T5<:Vector{Int64}, T6<:Function} <: AbstractClient
     id::T1                                  # client index
     Xtrain::T3                              # training data
@@ -7,7 +8,7 @@ mutable struct FedDCDClient{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64,
     y::T4                                   # (model) dual variable
     η::T2                                   # learning rate
     λ::T2                                   # L2 regularization parameter
-    oracle!::T6                              # gradient oracle
+    oracle!::T6                             # gradient oracle
     function FedDCDClient(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, config::Dict{String, Real}, oracle!::Function)
         numClasses = config["num_classes"]
         λ = config["lambda"]
@@ -24,7 +25,6 @@ end
 function update!(
     client::FedDCDClient
 )
-    # @printf("Client %d locally update\n", client.id)
     client.oracle!(client.Xtrain, client.XtrainT, client.Ytrain, client.λ, client.W, client.y, client.η)
 end
 
@@ -36,7 +36,7 @@ function getObjValue(
     return objValue
 end
 
-########################################################################################################
+# Client for FedDCD with multilayer perceptron local model
 mutable struct FedDCDClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Zygote.Params, T5<:Flux.OneHotArray, T6<:Function, T7<:Flux.Chain} <: AbstractClient
     id::T1                                  # client index
     Xtrain::T3                              # training data
@@ -51,7 +51,7 @@ mutable struct FedDCDClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float6
         λ = config["lambda"]
         Ytrain = Flux.onehotbatch(Ytrain, 1:numClasses)
         W = Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)
-        y = params(Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)) # ugly, but copy will cause bug
+        y = deepcopy(params(W)) 
         for j = 1:length(y)
             fill!(y[j], 0.0)
         end
@@ -70,7 +70,7 @@ end
 
 
 
-########################################################################################################
+# Client for AccFedDCD with linear local model
 mutable struct AccFedDCDClient{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Matrix{Float64}, T5<:Vector{Int64}, T6<:Function} <: AbstractClient
     id::T1                                  # client index
     Xtrain::T3                              # training data
@@ -126,7 +126,7 @@ function updateu!(client::AccFedDCDClient)
     client.z .= copy(client.u)
 end
 
-########################################################################################################
+# Client for AccFedDCD with multilayer perceptron local model
 mutable struct AccFedDCDClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Zygote.Params, T5<:Flux.OneHotArray, T6<:Function, T7<:Flux.Chain} <: AbstractClient
     id::T1                                  # client index
     Xtrain::T3                              # training data
@@ -149,10 +149,10 @@ mutable struct AccFedDCDClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Flo
         r = config["participation_rate"]
         Ytrain = Flux.onehotbatch(Ytrain, 1:numClasses)
         W = Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)
-        y = params(Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax))
-        z = params(Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax))
-        v = params(Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax))
-        u = params(Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)) 
+        y = deepcopy(params(W))
+        z = deepcopy(params(W))
+        v = deepcopy(params(W))
+        u = deepcopy(params(W))
         for j = 1:length(y)
             fill!(y[j], 0.0)
             fill!(z[j], 0.0)
@@ -169,7 +169,6 @@ end
 
 # Model updates on local device
 function updateW!(client::AccFedDCDClientNN)
-    # @printf("Client %d locally update\n", client.id)
     client.oracle!(client.XtrainT, client.Ytrain, client.W, client.v, client.λ)
 end
 

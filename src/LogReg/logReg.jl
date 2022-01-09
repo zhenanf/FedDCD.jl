@@ -166,6 +166,7 @@ function accuracy(
     return ret/n
 end
 
+# Calculate the accuracy
 function accuracy(
     X::SparseMatrixCSC{Float64, Int64},
     Y::Flux.OneHotArray,
@@ -228,45 +229,6 @@ function getGradient(
     return g
 end
 
-
-# Hessian-vector product for softmax regression.
-function Hv(
-    X::SparseMatrixCSC{Float64, Int64},
-    Xt::SparseMatrixCSC{Float64, Int64},
-    W::Matrix{Float64},
-    λ::Float64,
-    V::Matrix{Float64}
-)
-    @printf("Using naive Hessian-vector product oracle\n")
-    # Time complexity is O( nnz(X)*K^2 )
-    n, d = size(X)
-    _, K = size(W)
-    XW = X*W
-    XV = X*V
-    P = zeros(Float64, n, K)
-    ret = zeros(Float64, d, K)
-    for i = 1:n
-        P[i,:] = softmax( XW[i,:] )
-    end
-    # Loop over K, fill ret column by column
-    for k = 1:K
-        # Loop over the column of W
-        for kk = 1:K
-            # Calculate D*X*V[:,kk]
-            if kk == k
-                D = P[:,k] .* ( 1 .- P[:, kk] )
-            else
-                D = -P[:,k] .* P[:, kk]
-            end
-            DXVkk = D .* XV[:, kk]
-            ret[:, k] += ( Xt * DXVkk )
-        end
-    end
-    ret ./= n
-    ret += λ.*V
-    return ret
-end
-
 # Add a dense matrix with a sparse matrix in place, A = A + x * b', x sparse, b dense.
 function FastHvMatrixUpdate!(
     A::Matrix{Float64},
@@ -293,7 +255,6 @@ function FastHv(
     λ::Float64,
     V::Matrix{Float64}
 )
-    t1 = time()
     # Time complexity is O( nnz(X)*K )
     n, d = size(X)
     _, K = size(W)
@@ -320,54 +281,14 @@ function FastHv(
     end
     ret ./= n
     ret += λ.*V
-    t2 = time()
-    # @printf("Time for FastHv: %4.4f\n", t2 -t1)
     return ret
 end
 
-# Compute Newton direction. Use conjugate gradient to solve the linear system H D = g.
+
+# Compute Newton direction. Use cg to solve the linear system H D = g.
 function ComputeNewtonDirection(
     X::SparseMatrixCSC{Float64, Int64},
     Xt::SparseMatrixCSC{Float64, Int64},
-    y::Vector{Int64},
-    W::Matrix{Float64},
-    λ::Float64,
-    g::Matrix{Float64}
-)
-    maxIter = 100
-    n, d = size(X)
-    _, K = size(W)
-    # Compute gradient norm.
-    gnorm = norm(g)
-    tol = 1e-4
-
-    # Conjugate gradient iterations.
-    D = zeros(Float64, d, K)
-    r = g
-    p = copy(r)
-    for i = 1:maxIter
-        rnorm = norm(r)
-        # @printf("rnorm: %4.4e\n", rnorm)
-        if rnorm < tol*gnorm
-            break
-        end
-        Hp = Hv(X, Xt, W, λ, p)
-        α = dot(r, r) / dot(p, Hp)
-        D += α.*p
-        rnew = r - α.*Hp
-        β = norm(rnew)^2/norm(r)^2
-        p = rnew + β.*p
-        r = rnew
-    end
-    return D
-end
-
-
-# Compute Newton direction. Use lsmr to solve the linear system H D = g.
-function ComputeNewtonDirection2(
-    X::SparseMatrixCSC{Float64, Int64},
-    Xt::SparseMatrixCSC{Float64, Int64},
-    y::Vector{Int64},
     W::Matrix{Float64},
     λ::Float64,
     g::Matrix{Float64}
@@ -376,7 +297,6 @@ function ComputeNewtonDirection2(
     _, K = size(W)
     
     H = LinearMap(v->vec(FastHv(X, Xt, W, λ, reshape(v,d,K))), d*K, issymmetric=true, isposdef=true)
-    # H = LinearMap(v->FastHv(X, Xt, W, λ, v), issymmetric=true, isposdef=true)
     D = cg(H, vec(g), abstol=1e-8, reltol=1e-4, maxiter=1000)
 
     return reshape(D, d, K)
@@ -403,7 +323,7 @@ function SoftmaxNewtonMethod(
             break
         end
         # Compute Newton direction.
-        D = ComputeNewtonDirection2( X, Xt, y, W, λ, g)
+        D = ComputeNewtonDirection( X, Xt, W, λ, g)
         η = lineSearch(X, Y, D, W, g, λ)
         W .-= η*D
     end

@@ -18,7 +18,7 @@ function newton!(X::SparseMatrixCSC{Float64, Int64}, Xt::SparseMatrixCSC{Float64
             break
         end
         t1 = time()
-        D = ComputeNewtonDirection2( X, Xt, Y, W, λ, g)
+        D = ComputeNewtonDirection( X, Xt, W, λ, g)
         t2 = time()
         # @printf("Time spent on computing Newton direction: %4.4f\n", t2 - t1)
         η = lineSearch2(X, Y, y, D, W, g, λ)

@@ -1,3 +1,4 @@
+# Client for FedProx with linear local model
 mutable struct FedProxClient{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Matrix{Float64}, T5<:Vector{Int64}, T6<:Function} <: AbstractClient
     id::T1                                  # client index
     Xtrain::T3                              # training data
@@ -5,9 +6,9 @@ mutable struct FedProxClient{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64
     Ytrain::T5                              # training label
     W::T4                                   # (model) primal variable
     lr::T2                                  # learning rate
-    λ::T2                              # L2 regularization parameter
-    μ::T2                                   # mu for proximal operation
-    numLocalEpochs::T1                       # number of local steps
+    λ::T2                                   # regularization parameter
+    μ::T2                                   # proximal parameter
+    numLocalEpochs::T1                      # number of local steps
     function FedProxClient(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, config::Dict{String,Real})
         num_classes = config["num_classes"]
         λ = config["lambda"]
@@ -17,7 +18,6 @@ mutable struct FedProxClient{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64
         d = size(Xtrain, 2)
         W = zeros(Float64, d, num_classes)
         XtrainT = copy(Xtrain')
-        # y = zeros(Float64, num_classes, d)
         new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Matrix{Float64}, Vector{Int64}, Function}(id, Xtrain, XtrainT, Ytrain, W, learning_rate, λ, μ, numLocalEpochs)
     end
 end
@@ -26,7 +26,6 @@ end
 function update!(
     client::FedProxClient
 )
-    # @printf("Client %d running SGD\n", client.id)
     # Implement K epochs SGD, using lazy update to avoid dense update from the regularization.
     n, d = size(client.Xtrain)
     _, K = size(client.W)
@@ -81,7 +80,7 @@ function getObjValue(
 end
 
 
-########################################################################################################
+# Client for FedProx with multilayer perceptron local model
 mutable struct FedProxClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float64, Int64}, T4<:Zygote.Params, T5<:Flux.OneHotArray, T6<:Function, T7<:Flux.Chain} <: AbstractClient
     id::T1                                  # client index
     Xtrain::T3                              # training data
@@ -89,9 +88,9 @@ mutable struct FedProxClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float
     Ytrain::T5                              # training label
     W::T7                                   # (model) primal variable
     lr::T2                                  # learning rate
-    λ::T2                              # L2 regularization parameter
-    μ::T2                                   # mu for proximal operation
-    numLocalEpochs::T1                       # number of local steps
+    λ::T2                                   # regularization parameter
+    μ::T2                                   # proximal parameter
+    numLocalEpochs::T1                      # number of local steps
     function FedProxClientNN(id::Int64, Xtrain::SparseMatrixCSC{Float64, Int64}, Ytrain::Vector{Int64}, dim::Int64, config::Dict{String,Real})
         numClasses = config["num_classes"]
         Ytrain = Flux.onehotbatch(Ytrain, 1:numClasses)
@@ -101,7 +100,6 @@ mutable struct FedProxClientNN{T1<:Int64, T2<:Float64, T3<:SparseMatrixCSC{Float
         μ = config["mu"]
         W = Chain( Dense(780, dim, relu, bias=false), Dense(dim, 10, bias=false), NNlib.softmax)
         XtrainT = copy(Xtrain')
-        # y = zeros(Float64, num_classes, d)
         new{Int64, Float64, SparseMatrixCSC{Float64, Int64}, Zygote.Params, Flux.OneHotArray, Function, Flux.Chain}(id, Xtrain, XtrainT, Ytrain, W, learning_rate, λ, μ, numLocalEpochs)
     end
 end

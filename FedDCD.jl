@@ -23,7 +23,7 @@ export read_libsvm
 export fedAvgAndProx, Scaffold, fedDCD, accfedDCD
 export obj, accuracy
 export getStochasticGrad, getGradient
-export Hv, ComputeNewtonDirection, ComputeNewtonDirection2, SoftmaxNewtonMethod, lineSearch, lineSearch2
+export ComputeNewtonDirection, SoftmaxNewtonMethod, lineSearch, lineSearch2
 export dot_product
 export sgd!, newton!, adam!
 

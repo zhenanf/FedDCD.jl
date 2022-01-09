@@ -186,7 +186,7 @@ function TestNewtonMethod()
             break
         end
         # Compute Newton direction.
-        D = ComputeNewtonDirection2( X, Xt, Y, W, λ, g)
+        D = ComputeNewtonDirection( X, Xt, W, λ, g)
         # Line-search
         η = lineSearch(X, Y, D, W, g, λ)
         W .-= η*D

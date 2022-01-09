@@ -149,7 +149,6 @@ end
 function sendModelToAllClients!(
     server::ScaffoldServerNN
 )
-    # Only send model to selected clients
     for c in server.clients
         for j = 1:length(params(server.W))
             params(c.W)[j] .= params(server.W)[j]
@@ -164,18 +163,10 @@ function aggregate!(
     server::ScaffoldServerNN
 )
     # Take the average of the selected clients' model
-    # @show( length(params(server.W)) )
-    # @show( length(server.C) )
     l = length(params(server.W))
-    # for j = 1:l
-    #     fill!(params(server.W)[j], 0.0)
-    #     fill!(server.C[j], 0.0)
-    # end
     for i = 1:server.τ
         idx = server.selectedIndices[i]
         c = server.clients[idx]
-        # @show( length(c.ΔW) )
-        # @show( length(c.ΔC) )
         for j = 1:l 
             params(server.W)[j] .+= (server.lr/server.τ) * c.ΔW[j]
             server.C[j] .+= (server.lr/server.num_clients) * c.ΔC[j] 
