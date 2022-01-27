@@ -28,12 +28,12 @@ export dot_product
 export sgd!, newton!, adam!
 
 
-include("src/utils.jl")
-include("src/LogReg/logReg.jl")
-include("src/oracle.jl")
-include("src/Client/client.jl")
-include("src/Server/server.jl")
-include("src/training.jl")
+include("./utils.jl")
+include("./LogReg/logReg.jl")
+include("./oracle.jl")
+include("./Client/client.jl")
+include("./Server/server.jl")
+include("./training.jl")
 
 
 
