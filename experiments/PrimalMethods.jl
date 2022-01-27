@@ -2,10 +2,8 @@ using Printf
 using LinearAlgebra
 using SparseArrays
 using Random
-# Testing FedAvg
-# testFedAvg("data/rcv1_train.binary")
-# TestFedAvgAndProx("data/rcv1_train.binary", "data/rcv1_train.binary")
-function TestFedAvgAndProx(
+# Run FedAvg with logistic regression
+function RunFedAvgAndProx(
     fileTrain::String,
     fileTest::String,
     lambda::Float64,
@@ -14,14 +12,10 @@ function TestFedAvgAndProx(
     localLr::Float64,
     numRounds::Int64,
     writeFileName::String
-    # participationRate::Float64,
-    # lambda::Float64
     )
     numClients = 100
     numRounds = numRounds
     # Read data
-    # filename = "data/rcv1_train.binary"
-    # filename = "data/mnist.scale"
     Xtrain, Ytrain = read_libsvm(fileTrain)
     Xtest, Ytest = read_libsvm(fileTest)
     Ytrain, Ytest = labelTransform(Ytrain, Ytest)
@@ -31,7 +25,6 @@ function TestFedAvgAndProx(
     d = max( size(Xtrain, 2), size(Xtest, 2) )
     Xtrain = sparse(Itr, Jtr, Vtr, size(Xtrain, 1), d)
     Xtest = sparse(Ite, Jte, Vte, size(Xtest, 1), d)
-    
     numClasses = length( union( Set(Ytrain), Set(Ytest) ) )
     # Split data
     Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients)   
@@ -41,8 +34,6 @@ function TestFedAvgAndProx(
     clientConfig = Dict(
         "num_classes" => numClasses,
         "lambda" => lambda,
-        # "mu" => 1e-4,
-        # "mu" => 0.0,
         "mu" => mu,
         "learning_rate" => localLr,
         "numLocalEpochs" => 5,
@@ -65,23 +56,20 @@ function TestFedAvgAndProx(
     # Train
     _, objList, testAccList = fedAvgAndProx(server, clients, numRounds)
     writeToFile(
-        "rcv1",
+        fileTrain,
         "softmax classification",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
         writeFileName
-        # "results/FedAvg_logReg_RCV1_lambda1e-3_lr1e-2.csv"    # file stored.
     )
-    # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
-    @printf("Test finished!\n")
+    @printf("Finish training!\n")
 end
 
-# Test function for Scaffold
-# TestScaffold("data/mnist.scale", "data/mnist.scale.t")
-function TestScaffold(
+# Run Scaffold with logistic regression
+function RunScaffold(
     fileTrain::String,
     fileTest::String,
     lambda::Float64,
@@ -89,14 +77,10 @@ function TestScaffold(
     localLr::Float64,
     numRounds::Int64,
     writeFileName::String
-    # participationRate::Float64,
-    # lambda::Float64
     )
     numClients = 100
     numRounds = numRounds
     # Read data
-    # filename = "data/rcv1_train.binary"
-    # filename = "data/mnist.scale"
     Xtrain, Ytrain = read_libsvm(fileTrain)
     Xtest, Ytest = read_libsvm(fileTest)
     Ytrain, Ytest = labelTransform(Ytrain, Ytest)
@@ -138,22 +122,20 @@ function TestScaffold(
     # Train
     _, objList, testAccList = Scaffold(server, clients, numRounds)
     writeToFile(
-        "rcv1",
+        fileTrain,
         "softmax classification",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
         writeFileName
-        # "results/Scaffold_logReg_RCV1_lambda1e-3_lr1e-1.csv"    # file stored.
     )
-    # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
-    @printf("Test finished!\n")
+    @printf("Finish training!\n")
 end
 
-# rcv1, lambda = 1e-3, optimal obj=4.18584773e-01
-function TestNewtonMethod()
+# Run Newton method with logistic regression
+function RunNewtonMethod()
     # fileTrain = "data/mnist.scale"
     # fileTest = "data/mnist.scale.t"
     fileTrain = "data/rcv1_train.binary"
@@ -194,10 +176,8 @@ function TestNewtonMethod()
     
 end
 
-#############################################################################################################
-
-# TestFedAvgAndProxNN("data/mnist.scale", "data/mnist.scale.t")
-function TestFedAvgAndProxNN(
+# Run FedAvg with neural network
+function RunFedAvgAndProxNN(
     fileTrain::String,
     fileTest::String,
     lambda::Float64,
@@ -206,14 +186,10 @@ function TestFedAvgAndProxNN(
     localLr::Float64,
     numRounds::Int64,
     writeFileName::String
-    # participationRate::Float64,
-    # lambda::Float64
     )
     numClients = 100
     numRounds = numRounds
     # Read data
-    # filename = "data/rcv1_train.binary"
-    # filename = "data/mnist.scale"
     Xtrain, Ytrain = read_libsvm(fileTrain)
     Xtest, Ytest = read_libsvm(fileTest)
     Ytrain, Ytest = labelTransform(Ytrain, Ytest)
@@ -234,8 +210,6 @@ function TestFedAvgAndProxNN(
     clientConfig = Dict(
         "num_classes" => numClasses,
         "lambda" => lambda,
-        # "mu" => 1e-4,
-        # "mu" => 0.0,
         "mu" => mu,
         "learning_rate" => localLr,
         "numLocalEpochs" => 5,
@@ -261,23 +235,20 @@ function TestFedAvgAndProxNN(
     # Train
     _, objList, testAccList = fedAvgAndProx(server, clients, numRounds)
     writeToFile(
-        "mnist",
+        fileTrain,
         "softmax classification with MLP",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
         writeFileName
-        # "results/FedAvg_MLP_lambda1e-2_lr1e-2.csv"    # file stored.
     )
-    # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
-    @printf("Test finished!\n")
+    @printf("Finish training!\n")
 end
 
 
-# Test function for Scaffold with neural networks
-# TestScaffoldNN("data/mnist.scale", "data/mnist.scale.t")
+# Run Scaffold for neural network
 function TestScaffoldNN(
     fileTrain::String,
     fileTest::String,
@@ -286,14 +257,10 @@ function TestScaffoldNN(
     localLr::Float64,
     numRounds::Int64,
     writeFileName::String
-    # participationRate::Float64,
-    # lambda::Float64
     )
     numClients = 100
     numRounds = numRounds
     # Read data
-    # filename = "data/rcv1_train.binary"
-    # filename = "data/mnist.scale"
     Xtrain, Ytrain = read_libsvm(fileTrain)
     Xtest, Ytest = read_libsvm(fileTest)
     Ytrain, Ytest = labelTransform(Ytrain, Ytest)
@@ -338,16 +305,14 @@ function TestScaffoldNN(
     # Train
     _, objList, testAccList = Scaffold(server, clients, numRounds)
     writeToFile(
-        "mnist",
+        fileTrain,
         "softmax classification with MLP",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
         writeFileName
-        # "results/Scaffold_MLP_lambda1e-2_lr1e-1.csv"    # file stored.
     )
-    # writeToCSV(objList, testAccList, "results/FedAvg_logReg_lambda1e-2.csv")
 
-    @printf("Test finished!\n")
+    @printf("Finish training!\n")
 end

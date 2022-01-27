@@ -4,17 +4,20 @@ using SparseArrays
 using Random
 using Flux
 
-# Testing FedDCD
-# TestFedDCD("data/mnist.scale", "data/mnist.scale.t")
-# TestFedDCD("data/rcv1_train.multiclass", "data/rcv1_train.multiclass")
-# TestFedDCD("data/covtype.scale01", "data/covtype.scale01")
-function TestFedDCD(
+# Run FedDCD with logistic regression
+function RunFedDCD(
     fileTrain::String,
-    fileTest::String
+    fileTest::String,
+    lambda::Float64,
+    participationRate::Float64,
+    localLr::Float64,
+    numRounds::Int64,
+    writeFileName::String
     )
     numClients = 100
-    numRounds = 1000
+    numRounds = numRounds
 
+    # read data
     Xtrain, Ytrain = read_libsvm(fileTrain)
     Xtest, Ytest = read_libsvm(fileTest)
     Ytrain, Ytest = labelTransform(Ytrain, Ytest)
@@ -33,15 +36,15 @@ function TestFedDCD(
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-2,
-        "learning_rate" => 1e-3,
-        "participation_rate" => 0.05,
+        "lambda" => lambda,
+        "learning_rate" => localLr,
+        "participation_rate" => participationRate,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
-        "participation_rate" => 0.05,
+        "participation_rate" => participationRate,
         "learning_rate" => 0.99,
     )
 
@@ -57,27 +60,31 @@ function TestFedDCD(
     W, objList, testAccList = fedDCD(server, clients, numRounds)
 
     writeToFile(
-        "mnist",
+        fileTrain,
         "softmax classification",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
-        "results/exp2/FedDCD_logReg_mnist_lambda1e-2_tau5e-2.txt"    # file stored.
+        writeFileName
     )
 
-    @printf("Test finished!\n")
+    @printf("Finish training!\n")
 end
 
 
-# Testing accelerated FedDCD
-# TestAccFedDCD("data/mnist.scale", "data/mnist.scale.t")
-function TestAccFedDCD(
+# Run AccFedDCD with logistic regression
+function RunAccFedDCD(
     fileTrain::String,
-    fileTest::String
+    fileTest::String,
+    lambda::Float64,
+    participationRate::Float64,
+    localLr::Float64,
+    numRounds::Int64,
+    writeFileName::String
     )
     numClients = 100;
-    numRounds = 1000;
+    numRounds = numRounds;
     # Read data
     Xtrain, Ytrain = read_libsvm(fileTrain);
     Xtest, Ytest = read_libsvm(fileTest);
@@ -97,16 +104,15 @@ function TestAccFedDCD(
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-2,
-        "mu" => 0,
-        "learning_rate" => 1e-3,
-        "participation_rate" => 0.05,
+        "lambda" => lambda,
+        "learning_rate" => localLr,
+        "participation_rate" => participationRate,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
-        "participation_rate" => 0.05,
+        "participation_rate" => participationRate,
         "learning_rate" => 0.99,
     )
 
@@ -122,25 +128,30 @@ function TestAccFedDCD(
     W, objList, testAccList = accfedDCD(server, clients, numRounds, objMin = 0.0)
 
     writeToFile(
-        "mnist",
+        fileTrain,
         "softmax classification",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
-        "results/exp2/AccFedDCD_logReg_mnist_lambda1e-2_tau5e-2.txt"    # file stored.
+        writeFileName
     )
 
-    @printf("Test finished!\n")
+    @printf("Finish training!\n")
 end
 
-# W = TestFedDCDNN("data/mnist.scale", "data/mnist.scale.t");
+# Run FedDCD with neural network
 function TestFedDCDNN(
     fileTrain::String,
-    fileTest::String
+    fileTest::String,
+    lambda::Float64,
+    participationRate::Float64,
+    localLr::Float64,
+    numRounds::Int64,
+    writeFileName::String
     )
     numClients = 100;
-    numRounds = 100;
+    numRounds = numRounds;
     # Read data
     Xtrain, Ytrain = read_libsvm(fileTrain);
     Xtest, Ytest = read_libsvm(fileTest);
@@ -154,20 +165,20 @@ function TestFedDCDNN(
     
     numClasses = length( union( Set(Ytrain), Set(Ytest) ) );
     # Split data
-    # Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients) 
-    Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses)   
+    Xsplit, Ysplit = splitDataByRow(Xtrain, Ytrain, numClients) 
+    # Xsplit, Ysplit = splitDataByClass(Xtrain, Ytrain, numClients, numClasses)   
 
     # Setup config, running FedAvg if mu=0.
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-2,
+        "lambda" => lambda,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
-        "participation_rate" => 0.3,
-        "learning_rate" => 0.1,
+        "participation_rate" => participationRate,
+        "learning_rate" => localLr,
         "decay_rate" => 0.0,
     )
     
@@ -185,22 +196,21 @@ function TestFedDCDNN(
 
     # # Train
     W, objList, testAccList = fedDCD(server, clients, numRounds)
-    @printf("Test finished!\n")
+    @printf("Finish training!\n")
 
     writeToFile(
-        "mnist",
+        fileTrain,
         "softmax classification with MLP",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
-        "results/exp3/FedDCD_MLP_MNIST_niid_sgd_locallr1e-1_lr1e-1.txt"    # file stored.
+        writeFileName
     )
     return W
 end
 
 # test neural network
-# model = TestNN("data/mnist.scale", "data/mnist.scale.t");
 function TestNN(
     fileTrain::String,
     fileTest::String
@@ -241,13 +251,18 @@ function TestNN(
     return model
 end
 
-# W = TestAccFedDCDNN("data/mnist.scale", "data/mnist.scale.t");
-function TestAccFedDCDNN(
+# Run AccFedDCD with neural network
+function RunAccFedDCDNN(
     fileTrain::String,
-    fileTest::String
+    fileTest::String,
+    lambda::Float64,
+    participationRate::Float64,
+    localLr::Float64,
+    numRounds::Int64,
+    writeFileName::String
     )
     numClients = 100;
-    numRounds = 100;
+    numRounds = numRounds;
     # Read data
     Xtrain, Ytrain = read_libsvm(fileTrain);
     Xtest, Ytest = read_libsvm(fileTest);
@@ -267,15 +282,15 @@ function TestAccFedDCDNN(
     # Setup config
     clientConfig = Dict(
         "num_classes" => numClasses,
-        "lambda" => 1e-2,
-        "participation_rate" => 0.3,
+        "lambda" => lambda,
+        "participation_rate" => participationRate,
     )
 
     serverConfig = Dict(
         "num_classes" => numClasses,
         "num_clients" => numClients,
-        "participation_rate" => 0.3,
-        "learning_rate" => 1e-1,
+        "participation_rate" => participationRate,
+        "learning_rate" => localLr,
     )
     
     # model structure
@@ -295,13 +310,13 @@ function TestAccFedDCDNN(
     @printf("Test finished!\n")
 
     writeToFile(
-        "mnist",
+        fileTrain,
         "softmax classification with MLP",
         serverConfig,
         clientConfig,
         objList,
         testAccList,
-        "results/exp3/AccFedDCD_MLP_MNIST_niid_sgd_locallr1e-1_lr1e-1.txt"    # file stored.
+        writeFileName
     )
     return W
 end
