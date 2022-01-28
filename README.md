@@ -51,6 +51,24 @@ RunFedDCD(
     )
 ```
 
+# Citing this package
+
+If you use FedDCD.jl for published work,
+we encourage you to cite the software.
+
+Use the following BibTeX citation:
+
+```bibtex
+@article{fan2022dual,
+      title={A dual approach for federated learning}, 
+      author={Zhenan Fan and Huang Fang and Michael P. Friedlander},
+      year={2022},
+      eprint={2201.11183},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
+
 ## Credits
 
 FedDCD.jl is developed by
